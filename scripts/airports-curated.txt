@@ -1,0 +1,715 @@
+# Curated airport list for the game world.
+#
+# Columns:  IATA  PAX  TRANSFER  FLAGS
+#   PAX       approximate annual passengers in millions (game-balance input, not a statistic)
+#   TRANSFER  share of traffic that is connecting rather than local (0..1)
+#   FLAGS     B business-heavy   T leisure-heavy   t partly leisure
+#             W winter-sun / winter peak   S slot-constrained
+#
+# Coordinates, names, elevation and runway lengths come from OurAirports (public domain)
+# and are merged in by scripts/build-airports.mjs.
+
+# ───────────── United States ─────────────
+ATL 104.7 .62 B
+DFW 81.8 .55 B
+DEN 77.8 .40
+ORD 73.9 .40 B
+LAX 75.1 .15 B
+JFK 62.5 .12 BS
+LAS 57.6 .08 T
+MCO 57.7 .05 T
+MIA 52.3 .30 t
+CLT 53.4 .68
+SEA 50.9 .28 B
+PHX 48.9 .30 t
+EWR 49.1 .22 BS
+SFO 50.2 .18 B
+IAH 46.2 .50 B
+BOS 40.9 .04 B
+FLL 35.1 .05 T
+MSP 34.8 .38
+LGA 32.4 .05 BS
+DTW 31.5 .42
+PHL 28.1 .30
+SLC 26.9 .42
+DCA 25.5 .15 BS
+SAN 24.1 .03 t
+BWI 26.2 .15
+TPA 23.9 .03 T
+AUS 22.1 .03 B
+IAD 25.0 .30 B
+BNA 22.9 .05 t
+MDW 22.0 .25
+HNL 21.2 .10 TW
+DAL 17.5 .20
+PDX 16.5 .05
+STL 15.0 .05
+HOU 14.0 .20
+RDU 14.5 .03
+SJC 12.0 .02 B
+SMF 12.6 .02
+OAK 11.2 .03
+MCI 11.5 .03
+SNA 11.7 .02
+MSY 12.9 .03 T
+CLE 9.9 .03
+SAT 10.7 .03
+PIT 9.2 .03
+IND 9.8 .03
+CVG 8.8 .05
+CMH 8.4 .03
+RSW 10.1 .02 TW
+OGG 7.0 .05 TW
+KOA 4.0 .03 TW
+LIH 3.2 .03 TW
+MKE 6.0 .03
+JAX 7.4 .03
+ANC 5.4 .10
+FAI 1.1 .05
+JNU 0.8 0
+ABQ 5.3 .03
+BUF 4.6 .02
+OMA 5.0 .02
+BOI 4.7 .03
+RNO 4.6 .03 t
+TUS 3.9 .02
+OKC 4.4 .02
+MEM 4.7 .03
+CHS 6.1 .02 t
+GEG 4.1 .03
+ELP 3.9 .02
+BDL 6.5 .02
+PVD 3.9 .02
+SDF 4.2 .02
+ORF 4.5 .02
+RIC 4.8 .02
+TUL 3.1 .02
+DSM 3.0 .02
+SAV 3.9 .02 t
+MYR 3.4 .02 T
+PSP 3.2 .02 TW
+BZN 2.5 .02 T
+JAC 0.8 0 T
+ASE 0.6 0 TW
+EYW 1.4 0 TW
+SJU 12.2 .08 TW
+STT 1.6 .03 TW
+GUM 3.0 .10 T
+
+# ───────────── Canada ─────────────
+YYZ 50.5 .28 B
+YVR 26.4 .20 B
+YUL 20.3 .15 B
+YYC 18.0 .25
+YEG 8.1 .03
+YOW 5.1 .02
+YWG 4.5 .03
+YHZ 4.2 .03
+YQB 1.8 .02
+YYJ 1.9 .02
+YYT 1.5 .02
+YXE 1.5 .02
+YQR 1.2 .02
+YLW 2.0 .02
+YTZ 2.8 .02 B
+YZF 0.6 .05
+YXY 0.4 0
+YFB 0.15 .05
+
+# ───────────── Mexico, Central America, Caribbean ─────────────
+MEX 50.3 .20 B
+CUN 32.7 .02 TW
+GDL 17.7 .05
+MTY 13.3 .05 B
+TIJ 13.2 .03
+SJD 7.5 0 TW
+PVR 6.8 0 TW
+MID 3.6 0 t
+OAX 1.6 0 t
+PTY 16.6 .72
+SJO 5.6 .05 T
+LIR 1.8 0 TW
+SAL 3.6 .50
+GUA 3.0 .05
+SAP 1.2 0
+MGA 1.6 0
+BZE 1.2 0 TW
+HAV 5.8 .05 t
+VRA 2.0 0 TW
+PUJ 8.3 0 TW
+SDQ 4.9 .03
+MBJ 5.0 0 TW
+KIN 1.8 0
+NAS 3.9 .05 TW
+AUA 2.5 0 TW
+CUR 1.6 .05 TW
+SXM 1.8 .10 TW
+BGI 2.2 .05 TW
+POS 2.9 .05
+GCM 1.3 0 TW
+BDA 0.9 0 t
+ANU 0.9 .05 TW
+UVF 0.9 0 TW
+PTP 2.3 0 TW
+FDF 1.9 0 TW
+
+# ───────────── South America ─────────────
+GRU 43.0 .30 B
+CGH 22.3 .10 B
+SDU 9.0 .05 B
+GIG 14.0 .10 t
+BSB 16.7 .35
+CNF 11.0 .05
+VCP 12.0 .40
+REC 8.7 .10 t
+SSA 7.7 .03 t
+POA 8.3 .03
+FOR 7.2 .03 t
+CWB 6.5 .03
+MAO 3.1 .03
+BEL 3.5 .03
+FLN 3.9 0 t
+NAT 2.4 0 T
+IGU 2.0 0 T
+BOG 35.4 .30 B
+MDE 9.0 .03
+CTG 5.7 0 T
+CLO 5.6 .03
+BAQ 2.9 0
+ADZ 2.2 0 T
+LIM 23.6 .20
+CUZ 3.8 0 T
+AQP 1.9 0
+SCL 24.6 .15 B
+PUQ 1.0 0 t
+IPC 0.3 0 T
+CJC 2.0 0
+ANF 2.2 0
+EZE 12.4 .10
+AEP 12.3 .10
+COR 3.4 .03
+MDZ 2.3 0 t
+BRC 1.8 0 T
+USH 0.9 0 T
+IGR 1.5 0 T
+UIO 5.0 .05
+GYE 4.0 .03
+GPS 0.5 0 T
+CCS 3.0 .03
+MVD 2.1 .03
+ASU 1.2 .03
+LPB 1.4 0
+VVI 2.6 .05
+GEO 0.8 0
+PBM 0.5 0
+CAY 0.5 0
+
+# ───────────── United Kingdom & Ireland ─────────────
+LHR 80.9 .25 BS
+LGW 46.6 .05 t
+STN 28.1 0
+LTN 18.0 0
+LCY 5.1 0 B
+MAN 29.4 .03
+EDI 14.7 .02
+GLA 9.7 .02
+BHX 12.6 .02
+BRS 9.0 0
+NCL 5.2 0
+BFS 6.3 0
+ABZ 3.0 0 B
+LPL 5.0 0
+INV 0.9 0
+DUB 32.9 .10
+ORK 2.6 0
+SNN 1.9 0
+
+# ───────────── France, Benelux ─────────────
+CDG 76.2 .30 B
+ORY 31.9 .05
+NCE 14.5 0 t
+LYS 11.7 .03
+MRS 10.2 0
+TLS 9.6 0 B
+BOD 7.7 0
+NTE 7.2 0
+BSL 9.1 0
+AJA 1.6 0 T
+AMS 71.7 .37 B
+EIN 6.7 0
+BRU 26.4 .15 B
+CRL 8.2 0
+LUX 4.4 0 B
+
+# ───────────── Germany, Switzerland, Austria ─────────────
+FRA 70.6 .50 B
+MUC 47.9 .38 B
+BER 23.0 .03
+DUS 25.5 .05 B
+HAM 17.3 0
+STR 12.7 0 B
+CGN 12.4 0
+HAJ 6.3 0
+NUE 4.1 0
+ZRH 31.5 .30 B
+GVA 17.9 .03 B
+VIE 31.7 .25 B
+SZG 1.7 0 t
+INN 1.1 0 TW
+
+# ───────────── Iberia ─────────────
+MAD 61.7 .28 B
+BCN 52.7 .05 t
+PMI 29.7 0 T
+AGP 19.9 0 T
+ALC 15.0 0 T
+LPA 13.3 .03 TW
+TFS 11.2 0 TW
+ACE 7.3 0 TW
+FUE 5.6 0 TW
+IBZ 8.2 0 T
+VLC 8.5 0
+SVQ 7.5 0 t
+BIO 5.9 0 B
+SCQ 2.9 0
+MAH 3.5 0 T
+LIS 31.2 .20 t
+OPO 13.1 .02
+FAO 9.0 0 T
+FNC 3.2 0 TW
+PDL 2.0 0 T
+
+# ───────────── Italy, Greece, Cyprus, Malta ─────────────
+FCO 43.5 .20 t
+MXP 28.8 .05 B
+LIN 9.5 0 B
+BGY 13.9 0
+VCE 11.6 0 T
+NAP 10.9 0 t
+BLQ 9.4 0
+CTA 10.2 0 t
+PMO 7.0 0 t
+FLR 3.0 0 T
+PSA 5.0 0 t
+TRN 4.0 0
+BRI 5.5 0
+CAG 4.5 0 T
+OLB 3.0 0 T
+VRN 3.5 0
+ATH 25.6 .10 t
+SKG 6.9 0
+HER 8.0 0 T
+RHO 5.5 0 T
+CFU 3.3 0 T
+JTR 2.3 0 T
+JMK 1.4 0 T
+CHQ 3.0 0 T
+LCA 8.2 0 T
+PFO 3.0 0 T
+MLA 7.3 0 T
+
+# ───────────── Nordics ─────────────
+CPH 30.3 .20 B
+BLL 3.5 0
+AAL 1.5 0
+OSL 28.6 .15
+BGO 6.3 0
+TRD 4.4 0
+SVG 4.3 0 B
+TOS 2.3 0
+BOO 1.8 0
+LYR 0.18 0 T
+ARN 25.6 .15 B
+GOT 6.8 0
+MMX 2.0 0
+LLA 1.2 0
+HEL 21.9 .30
+OUL 1.0 0
+RVN 0.7 0 TW
+KEF 7.2 .30 T
+FAE 0.4 0
+GOH 0.1 0
+
+# ───────────── Central & Eastern Europe ─────────────
+WAW 18.9 .20
+KRK 8.4 0 t
+GDN 5.4 0
+KTW 5.0 0
+WRO 3.5 0
+POZ 2.4 0
+PRG 17.8 .05 t
+BUD 16.2 .03 t
+BTS 2.3 0
+LJU 1.7 0
+ZAG 3.4 0
+SPU 3.3 0 T
+DBV 2.9 0 T
+BEG 6.2 .10
+SJJ 1.1 0
+TGD 1.3 0
+TIV 1.2 0 T
+SKP 2.4 0
+TIA 7.0 0
+PRN 3.0 0
+OTP 14.7 .03
+CLJ 2.9 0
+SOF 7.1 0
+VAR 1.4 0 T
+BOJ 1.7 0 T
+RIX 7.8 .10
+VNO 5.0 0
+TLL 3.3 0
+KBP 6.0 0
+LWO 2.0 0
+ODS 1.5 0
+MSQ 2.5 0
+SVO 36.0 .30
+DME 20.0 .05
+VKO 16.0 .05
+LED 19.6 .03
+AER 6.8 0 T
+SVX 6.2 .03
+OVB 6.7 .10
+KZN 3.5 0
+KRR 4.6 0
+ROV 3.0 0
+UFA 3.2 0
+KJA 2.5 .05
+IKT 2.4 0
+VVO 3.0 0
+KHV 2.2 0
+PKC 0.8 0 T
+YKS 0.9 0
+MMK 0.9 0
+KGD 3.8 0
+
+# ───────────── Türkiye & Caucasus ─────────────
+IST 76.0 .55 B
+SAW 41.0 .10
+AYT 35.7 0 T
+ESB 12.0 .03
+ADB 12.4 0
+DLM 4.5 0 T
+BJV 4.3 0 T
+TZX 3.5 0
+GZT 2.5 0
+TBS 3.7 0
+BUS 0.6 0 t
+EVN 5.0 0
+GYD 7.0 .05
+
+# ───────────── Middle East ─────────────
+DXB 86.4 .60 B
+SHJ 17.0 .20
+AUH 28.0 .60
+DOH 50.0 .75
+KWI 15.5 .05
+BAH 9.6 .40
+MCT 13.0 .30
+SLL 1.5 0 T
+RUH 37.0 .10 B
+JED 49.0 .10
+MED 8.4 0
+DMM 10.4 .03
+TLV 21.0 .03 B
+AMM 9.0 .20
+AQJ 0.3 0 T
+BEY 7.0 .03
+BGW 3.0 0
+EBL 2.0 0
+BSR 1.0 0
+IKA 9.0 .05
+MHD 10.0 0
+SYZ 3.0 0
+DAM 1.5 0
+
+# ───────────── Central & South Asia ─────────────
+ALA 9.5 .10
+NQZ 7.5 .03
+TAS 6.0 .05
+SKD 1.2 0 T
+DYU 1.5 0
+ASB 1.0 0
+KBL 1.0 0
+DEL 73.0 .20 B
+BOM 52.0 .10 B
+BLR 38.0 .05 B
+HYD 25.0 .05
+MAA 21.0 .05
+CCU 20.0 .03
+AMD 11.4 0
+COK 10.2 .03
+PNQ 9.0 0
+GOI 8.4 0 TW
+JAI 5.5 0 t
+LKO 5.5 0
+TRV 4.4 0
+GAU 5.5 0
+SXR 4.0 0 T
+IXL 1.2 0 T
+IXC 3.5 0
+PAT 3.5 0
+BBI 4.0 0
+VNS 3.0 0 t
+NAG 2.8 0
+IXB 3.0 0
+ATQ 3.0 0
+CCJ 3.3 0
+IXE 2.0 0
+VTZ 2.8 0
+CMB 8.9 .10 t
+MLE 4.9 0 TW
+GAN 0.2 0 TW
+DAC 11.0 .03
+CGP 1.5 0
+KTM 8.0 0 t
+PBH 0.4 0 T
+KHI 7.2 0
+LHE 5.2 0
+ISB 4.8 0
+
+# ───────────── China, Hong Kong, Macau, Taiwan, Mongolia ─────────────
+PEK 53.0 .20 B
+PKX 39.0 .10
+PVG 54.0 .15 B
+SHA 42.0 .05 B
+CAN 63.0 .10
+SZX 52.9 .05 B
+CTU 30.0 .03
+TFU 45.0 .10
+KMG 42.0 .10 t
+XIY 41.0 .10 t
+CKG 44.8 .05
+HGH 41.0 .03
+NKG 27.0 .03
+CGO 25.0 .05
+XMN 24.0 .03
+WUH 26.0 .03
+CSX 27.0 .03
+TAO 24.0 .03
+HAK 24.0 0 T
+URC 25.0 .10
+TSN 18.0 0
+SYX 21.0 0 TW
+HRB 20.0 0
+DLC 18.0 0
+SHE 20.0 0
+KWE 20.0 0
+LHW 15.0 0
+TYN 13.0 0
+NNG 14.0 0
+FOC 13.0 0
+KHN 10.0 0
+HFE 11.0 0
+TNA 16.0 0
+CGQ 14.0 0
+SJW 10.0 0
+HET 11.0 0
+INC 8.0 0
+XNN 7.0 0
+LXA 5.5 0 T
+KWL 6.0 0 T
+LJG 6.0 0 T
+ZUH 11.0 0
+WNZ 10.0 0
+NGB 12.0 0
+JHG 5.0 0 T
+KHG 2.5 0
+HKG 53.0 .30 B
+MFM 9.6 0 T
+TPE 45.0 .15 B
+TSA 6.0 0 B
+KHH 7.5 0
+RMQ 2.0 0
+UBN 2.0 0
+
+# ───────────── Japan, Korea ─────────────
+HND 79.0 .10 B
+NRT 39.0 .20
+KIX 30.0 .05 t
+ITM 16.5 0
+NGO 13.5 .03
+FUK 24.7 .03
+CTS 24.6 0 t
+OKA 21.8 0 T
+KOJ 5.5 0
+SDJ 3.7 0
+HIJ 3.0 0
+KMJ 3.3 0
+NGS 3.2 0
+MYJ 3.0 0
+KMQ 1.7 0
+ISG 2.6 0 T
+ICN 70.0 .20 B
+GMP 25.4 0 B
+CJU 31.3 0 T
+PUS 17.0 0
+TAE 4.0 0
+
+# ───────────── South-East Asia ─────────────
+SIN 67.0 .30 B
+KUL 57.0 .20
+PEN 8.3 0
+BKI 9.4 0 t
+KCH 6.0 0
+LGK 2.9 0 T
+JHB 4.3 0
+BKK 62.0 .15 t
+DMK 30.0 .03
+HKT 18.1 0 TW
+CNX 11.3 0 T
+USM 2.7 0 T
+KBV 4.0 0 TW
+HDY 4.0 0
+CGK 54.0 .10
+DPS 24.2 .03 T
+SUB 16.6 .05
+UPG 10.0 .20
+KNO 8.0 0
+BPN 5.0 0
+YIA 4.0 0 t
+LOP 3.0 0 T
+BDO 3.0 0
+PLM 4.0 0
+PKU 3.5 0
+SRG 3.5 0
+DJJ 1.5 0
+MNL 50.0 .10
+CEB 12.7 .05 t
+DVO 4.0 0
+CRK 3.0 0
+MPH 3.0 0 T
+PPS 2.0 0 T
+SGN 41.0 .05
+HAN 30.0 .05
+DAD 15.5 0 T
+CXR 9.7 0 T
+PQC 5.0 0 T
+HPH 2.7 0
+PNH 6.0 0
+SAI 4.0 0 T
+RGN 4.0 0
+MDL 1.0 0
+VTE 2.3 0
+LPQ 1.0 0 T
+BWN 2.0 0
+DIL 0.3 0
+
+# ───────────── Oceania ─────────────
+SYD 42.0 .05 B
+MEL 35.0 .05 B
+BNE 23.0 .05
+PER 16.0 .03
+ADL 8.5 0
+OOL 6.5 0 T
+CNS 5.0 0 T
+CBR 3.2 0 B
+HBA 2.8 0 t
+DRW 2.0 0
+TSV 1.6 0
+ASP 0.6 0 T
+AYQ 0.4 0 T
+BME 0.4 0 T
+KTA 0.9 0 B
+AKL 19.0 .10
+CHC 6.9 0 t
+WLG 6.4 0 B
+ZQN 2.6 0 T
+DUD 1.0 0
+NAN 2.3 .10 T
+PPT 1.5 0 T
+BOB 0.2 0 T
+NOU 0.5 0
+POM 1.4 0
+APW 0.4 0 T
+TBU 0.3 0 T
+RAR 0.3 0 T
+VLI 0.4 0 T
+HIR 0.3 0
+ROR 0.15 0 T
+SPN 0.8 0 T
+MAJ 0.1 0
+TRW 0.1 0
+
+# ───────────── Africa ─────────────
+JNB 21.7 .20 B
+CPT 10.9 0 T
+DUR 6.1 0
+PLZ 1.7 0
+CAI 26.0 .15
+HRG 7.0 0 TW
+SSH 6.0 0 TW
+LXR 1.5 0 TW
+ASW 1.0 0 TW
+HBE 2.5 0
+CMN 10.3 .35
+RAK 6.4 0 T
+AGA 2.2 0 TW
+TNG 1.5 0
+FEZ 1.4 0 t
+ALG 8.0 .03
+ORN 1.9 0
+TUN 6.2 0
+DJE 2.3 0 T
+NBE 1.5 0 T
+MJI 1.2 0
+ADD 12.1 .70
+NBO 8.0 .30
+MBA 1.6 0 T
+DAR 2.5 0
+ZNZ 1.3 0 T
+JRO 0.9 0 T
+EBB 1.9 0
+KGL 1.0 .10
+BJM 0.3 0
+LOS 8.0 .05 B
+ABV 5.0 0
+PHC 1.0 0
+KAN 0.6 0
+ACC 3.4 .05
+ABJ 2.3 .15
+DSS 2.8 .05
+BKO 0.9 0
+OUA 0.6 0
+NIM 0.4 0
+COO 0.6 0
+LFW 0.9 .30
+ROB 0.3 0
+FNA 0.3 0
+CKY 0.5 0
+BJL 0.4 0 TW
+SID 1.2 0 TW
+RAI 0.6 0
+NKC 0.4 0
+DLA 1.5 0
+NSI 1.0 0
+LBV 0.9 0
+BZV 0.8 0
+PNR 0.6 0
+FIH 1.2 0
+FBM 0.5 0
+LAD 1.6 0
+MPM 1.2 0
+LUN 1.7 0
+LVI 0.4 0 T
+VFA 0.4 0 T
+HRE 1.4 0
+WDH 0.9 0
+WVB 0.2 0
+GBE 0.5 0
+MUB 0.5 0 T
+MRU 3.9 0 TW
+RUN 2.5 0 t
+SEZ 1.2 0 TW
+TNR 0.9 0
+NOS 0.4 0 T
+HAH 0.3 0
+JIB 0.4 0
+ASM 0.2 0
+KRT 1.0 0
+JUB 0.3 0
+MGQ 0.4 0
+HGA 0.3 0
+SSG 0.4 0
+TMS 0.2 0
+HLE 0.01 0 T
