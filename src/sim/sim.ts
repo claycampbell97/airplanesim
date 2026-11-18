@@ -93,6 +93,8 @@ export class Sim {
   private carry = 0;
   /** Earliest pending aircraft event; lets most ticks skip the fleet scan. */
   nextScan = 0;
+  /** Bumped whenever routes or hubs change, so views know to rebuild. */
+  revision = 0;
   /** Cumulative milliseconds spent in each part of the simulation (diagnostics). */
   profile = { flights: 0, world: 0, airlines: 0, rivals: 0, markets: 0 };
 
@@ -184,6 +186,7 @@ export class Sim {
   }
 
   indexRoute(r: Route): void {
+    this.revision++;
     this.routeById.set(r.id, r);
     let list = this.routesByAirline.get(r.airline);
     if (!list) this.routesByAirline.set(r.airline, (list = []));
@@ -191,6 +194,7 @@ export class Sim {
   }
 
   unindexRoute(r: Route): void {
+    this.revision++;
     this.routeById.delete(r.id);
     const list = this.routesByAirline.get(r.airline);
     if (list) list.splice(list.indexOf(r), 1);

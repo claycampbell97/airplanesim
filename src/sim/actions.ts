@@ -301,6 +301,7 @@ export function developHub(sim: Sim, airlineId: number, airport: AirportId): Res
   const cost = hubSetupCost(ap, level) * sim.tuning.cost;
   if (al.cash < cost) return fail('Not enough cash');
   al.cash -= cost;
+  sim.revision++;
   if (existing) {
     existing.level = level;
     sim.dirtyAirlines.add(airlineId);
@@ -319,6 +320,7 @@ export function closeHub(sim: Sim, airlineId: number, airport: AirportId): Resul
   if (sim.fleetOf(airlineId).some((a) => a.base === airport)) return fail('Move the aircraft based here first');
   if (sim.routesOf(airlineId).some((r) => r.a === airport && !hubAt(al, r.b))) return fail('Close the routes that depend on this base first');
   al.hubs.splice(al.hubs.indexOf(hub), 1);
+  sim.revision++;
   // Routes between two bases stay open, re-anchored at the other end.
   for (const r of sim.routesOf(airlineId)) {
     if (r.a === airport) flipRoute(sim, r);
