@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { acquireAircraft, closeRoute, disposeAircraft, openRoute, setRotation } from '../src/sim/actions';
 import { AIRCRAFT_TYPE } from '../src/sim/data/aircraft';
-import { getMarket } from '../src/sim/market';
+import { getMarket, refreshConnections } from '../src/sim/market';
 import { equity, ledgerCost, ledgerProfit, ledgerRevenue, leaseCapacity, leaseCommitment, valuation } from '../src/sim/finance';
 import { suggestRoutes } from '../src/sim/planner';
 import { buySlots, planShortfall, slotsCost, slotsToBuy } from '../src/sim/slots';
@@ -128,10 +128,21 @@ describe('balance', () => {
       const sim = runBot(hq, 'standard', ['a20n', 'e295', 'a21n'], months);
       const p = sim.player;
       console.log(`\n=== widebodies from ${hq} after ${months} months: fleet ${sim.fleetOf(0).length}, reputation ${p.reputation.toFixed(0)}, hub level ${p.hubs[0].level} ===`);
-      for (const type of ['b789', 'a359', 'b77w', 'a388']) {
-        const plans = suggestRoutes(sim, p, hq, type, 6);
-        console.log(`  ${type}: ` + plans.map((x) => `${x.b} ${(x.profitPerDay / 1e3).toFixed(0)}k LF ${(x.estimate.loadFactor * 100).toFixed(0)}%`).join(' | '));
-      }
+      const show = (types: string[]) => {
+        for (const type of types) {
+          const plans = suggestRoutes(sim, p, hq, type, 6);
+          console.log(`  ${type}: ` + plans.map((x) => `${x.b} ${(x.profitPerDay / 1e3).toFixed(0)}k LF ${(x.estimate.loadFactor * 100).toFixed(0)}% fare ${((x.price[0] / x.estimate.ref[0]) * 100).toFixed(0)}%`).join(' | '));
+        }
+      };
+      show(['b789', 'a359', 'b77w', 'a388']);
+      // The same airline grown into a mega hub with a strong brand: what the jumbos are for.
+      p.hubs[0].level = 3;
+      p.reputation = 78;
+      p.otpDay = 0.9;
+      sim.offers.clear();
+      refreshConnections(sim, p);
+      console.log(`  ... as a mega hub with reputation ${p.reputation}:`);
+      show(['b77w', 'b748', 'a388']);
     }
   });
 

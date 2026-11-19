@@ -5,8 +5,8 @@
 // quality. On top of the local traffic, airlines with hubs collect connecting
 // passengers travelling between two of their spokes.
 //
-// The output is a set of inflow rates (passengers per day) on each route. Flights
-// then draw from booking pools that fill at those rates (see ops.ts).
+// The output is a set of demand rates (passengers per day) on each route. Each
+// departure then draws its share of them (see ops.ts).
 
 import { AIRCRAFT_TYPE } from './data/aircraft';
 import { AIRPORT, AIRPORTS, airportDistance, pairIndex } from './data/airports';
@@ -53,6 +53,10 @@ export interface Offer {
 const OTHERS_CAPACITY: Triple = [0.85, 0.85, 0.8];
 /** At a slot-limited airport the incumbents can only field this share of the seats they would like to. */
 const SLOT_SCARCITY = 0.78;
+/** ...and price their seats this much above the reference fare, which is roughly what thins demand to fit. */
+const SLOT_PREMIUM = 1.15;
+/** Daily flights each way of a typical incumbent on a busy route. */
+const OTHERS_FLIGHTS_EACH = 8;
 /** Typical aircraft size used by the incumbents, to turn seats into frequency. */
 const OTHERS_SEATS = 165;
 const OTHERS_QUALITY = 0.45;
@@ -61,8 +65,6 @@ export const OTHER_AIRLINES = -1;
 
 /** How strongly premium passengers switch airline over price (economy depends on the market, see below). */
 const PRICE_SENSITIVITY: Triple = [2.6, 1.6, 1.1];
-/** Booking pools hold at most this many days of demand; beyond that travellers give up. */
-export const POOL_DAYS = 1.25;
 /** Share of an unserved city pair that one hub can win with a convenient connection. */
 const CONNECT_SHARE = 0.09;
 /** Where a decent non-stop exists, only this fraction of that share still connects. */
@@ -133,10 +135,15 @@ function applyTimeFactor(sim: Sim, m: Market): void {
   const daily = (m.demand[0] * OTHERS_CAPACITY[0] + m.demand[1] * OTHERS_CAPACITY[1] + m.demand[2] * OTHERS_CAPACITY[2]) * scarce;
   // Thin markets are poorly served or not at all: this is where newcomers find room.
   const presence = Math.max(0, Math.min(1, (daily - 60) / 140));
-  o.freq = Math.min(16, (daily / OTHERS_SEATS) * presence);
+  o.freq = (daily / OTHERS_SEATS) * presence;
+  // They are several airlines, not one: beyond a typical airline's worth of flights
+  // their pull grows in step with their schedule rather than faster.
+  o.carriers = Math.max(1, o.freq / OTHERS_FLIGHTS_EACH);
+  // Short of seats, they charge what clears the market rather than turn people away.
+  const premium = (AIRPORT[m.a].slotLimited ? SLOT_PREMIUM : 1) * (AIRPORT[m.b].slotLimited ? SLOT_PREMIUM : 1);
   for (let c = 0; c < 3; c++) {
     o.seats[c] = o.freq > 0 ? (m.demand[c] * OTHERS_CAPACITY[c] * scarce * presence) / o.freq : 0;
-    o.price[c] = m.ref[c];
+    o.price[c] = m.ref[c] * premium;
   }
 }
 
@@ -230,9 +237,14 @@ export function rotationFrequency(sim: Sim, ac: Aircraft, rotation: number[] = a
 
 /** Flights (in either direction) an aircraft makes per day across its whole rotation. */
 export function legsPerDay(sim: Sim, ac: Aircraft): number {
-  let routes = 0;
-  for (const rid of ac.rotation) if (sim.routeById.has(rid)) routes += 1;
-  return 2 * routes * rotationFrequency(sim, ac);
+  let legs = sim.legs.get(ac.id);
+  if (legs === undefined) {
+    let routes = 0;
+    for (const rid of ac.rotation) if (sim.routeById.has(rid)) routes += 1;
+    legs = 2 * routes * rotationFrequency(sim, ac);
+    sim.legs.set(ac.id, legs);
+  }
+  return legs;
 }
 
 export function aircraftAgeYears(sim: Sim, ac: Aircraft): number {
@@ -296,6 +308,8 @@ export interface OfferInput {
   quality: number;
   /** Awareness ramp (0..1) × promotion boost. */
   boost: number;
+  /** When the offer stands for several airlines flying the route between them: how many. */
+  carriers?: number;
 }
 
 /**
@@ -318,7 +332,9 @@ export function splitMarket(m: Market, offers: OfferInput[]): Triple[] {
       let a = 0;
       if (o.freq > 0 && o.seats[c] > 0) {
         const x = o.price[c] / m.ref[c];
-        a = Math.pow(o.freq, 1.15) * Math.exp(-priceWeight * (x - 1)) * Math.pow(0.5 + o.quality, qualityWeight);
+        // Frequency pulls more than in proportion: the airline with the most flights is the one people check first.
+        const n = o.carriers ?? 1;
+        a = n * Math.pow(o.freq / n, 1.15) * Math.exp(-priceWeight * (x - 1)) * Math.pow(0.5 + o.quality, qualityWeight);
         totalFreq += o.freq;
       }
       attr[i] = a;
@@ -339,7 +355,7 @@ export function splitMarket(m: Market, offers: OfferInput[]): Triple[] {
       const o = offers[i];
       const want = volume * (attr[i] / totalAttr) * o.boost;
       cap[i] = o.freq * o.seats[c];
-      out[i][c] = want; // above capacity this keeps the pressure on: full flights, the pool cap limits the rest
+      out[i][c] = want; // may exceed the seats on offer: those flights go out full and the rest are turned away
       if (want > cap[i]) spill += want - cap[i];
       else if (attr[i] > 0) spareAttr += attr[i];
     }
@@ -375,26 +391,9 @@ export function refreshMarket(sim: Sim, m: Market): void {
   const split = splitMarket(m, marketInputs(sim, m));
   for (let i = 0; i < m.routes.length; i++) {
     const r = m.routes[i];
-    settlePools(sim, r);
     for (let c = 0; c < 3; c++) {
       r.rate[0][c] = split[i][c];
       r.rate[1][c] = split[i][c];
-    }
-  }
-}
-
-/** Brings a route's booking pools up to the current time. */
-export function settlePools(sim: Sim, r: Route): void {
-  const now = sim.game.time;
-  const days = (now - r.poolTime) / 1440;
-  if (days <= 0) return;
-  r.poolTime = now;
-  for (let d = 0; d < 2; d++) {
-    for (let c = 0; c < 3; c++) {
-      const rate = r.rate[d][c];
-      r.pool[d][c] = Math.min(r.pool[d][c] + rate * days, rate * POOL_DAYS);
-      const crate = r.connRate[d][c];
-      r.connPool[d][c] = Math.min(r.connPool[d][c] + crate * days, crate * POOL_DAYS);
     }
   }
 }
@@ -505,7 +504,6 @@ export function refreshConnections(sim: Sim, al: Airline): void {
   const revenue = new Map<number, Triple>();
   const volume = new Map<number, Triple>();
   for (const r of routes) {
-    settlePools(sim, r);
     r.connRate = [[0, 0, 0], [0, 0, 0]];
     revenue.set(r.id, [0, 0, 0]);
     volume.set(r.id, [0, 0, 0]);
@@ -616,6 +614,7 @@ export function detachRoute(sim: Sim, r: Route): void {
 /** Call after anything that changes what an airline offers on a route. */
 export function routeChanged(sim: Sim, r: Route): void {
   sim.offers.delete(r.id);
+  for (const id of r.aircraft) sim.legs.delete(id);
   refreshMarket(sim, getMarket(sim, r.a, r.b));
   sim.dirtyAirlines.add(r.airline);
 }
@@ -636,6 +635,28 @@ export function refreshAllMarkets(sim: Sim, everything = false): void {
 }
 
 // ───────────────────────── Planning estimates ─────────────────────────
+
+/** Product quality passengers would perceive on a service with the given cabin comfort. */
+export function serviceQuality(al: Airline, comfort: number): number {
+  return Math.max(0, Math.min(1, airlineQualityBase(al) + 0.25 * comfort));
+}
+
+/**
+ * The offers a prospective service would compete with, followed by the service itself
+ * (so it is the last entry). `existing` is the route it would replace, if any; the
+ * airline's own other service on the pair is otherwise left out.
+ */
+export function serviceInputs(sim: Sim, al: Airline, m: Market, mine: OfferInput, existing?: Route): OfferInput[] {
+  const inputs: OfferInput[] = [];
+  for (const r of m.routes) {
+    if (r === existing || (r.airline === al.id && !existing)) continue;
+    const o = offerOf(sim, r);
+    inputs.push({ freq: o.freq, seats: o.seats, price: r.price, quality: o.quality, boost: routeBoost(sim, r) });
+  }
+  inputs.push(m.others);
+  inputs.push(mine);
+  return inputs;
+}
 
 export interface RouteEstimate {
   dist: number;
@@ -674,21 +695,23 @@ export function estimateService(
   existing?: Route,
   /** Skip the connecting-traffic estimate (cheaper; used when ranking many candidates). */
   localOnly = false,
+  /** How well known the service is: 1 for an established route, less while it is new. */
+  boost = 1,
+  /** A hypothetical extra competitor, for "what if someone moves in" forecasts. */
+  rival?: OfferInput,
 ): RouteEstimate {
   const m = getMarket(sim, a, b);
   const freq = aircraftCount > 0 ? dailyRoundTrips(typeId, m.dist) * aircraftCount : 0;
-  const quality = Math.max(0, Math.min(1, airlineQualityBase(al) + 0.25 * comfort));
-  const inputs: OfferInput[] = [];
+  const quality = serviceQuality(al, comfort);
   const competitors: RouteEstimate['competitors'] = [];
   for (const r of m.routes) {
     if (r === existing || (r.airline === al.id && !existing)) continue;
     const o = offerOf(sim, r);
-    inputs.push({ freq: o.freq, seats: o.seats, price: r.price, quality: o.quality, boost: routeBoost(sim, r) });
     if (o.freq > 0) competitors.push({ airline: r.airline, freq: o.freq, price: r.price, seats: o.seats });
   }
-  inputs.push(m.others);
   if (m.others.freq > 0) competitors.push({ airline: OTHER_AIRLINES, freq: m.others.freq, price: m.others.price, seats: m.others.seats });
-  inputs.push({ freq, seats: cabin, price, quality, boost: 1 });
+  const inputs = serviceInputs(sim, al, m, { freq, seats: cabin, price, quality, boost }, existing);
+  if (rival) inputs.splice(inputs.length - 1, 0, rival);
   const split = splitMarket(m, inputs);
   const mine = split[split.length - 1];
 

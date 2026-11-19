@@ -7,7 +7,7 @@ import { AIRPORT, airportDistance } from './data/airports';
 import {
   DAYS_PER_MONTH, earn, feeFactor, hubSetupCost, leaseCapacity, leaseCommitment, marketLease, marketValue, spend,
 } from './finance';
-import { attachRoute, detachRoute, findMarket, getMarket, refreshConnections, refreshMarket, routeChanged, settlePools } from './market';
+import { attachRoute, detachRoute, findMarket, getMarket, refreshConnections, refreshMarket, routeChanged } from './market';
 import { faresManaged, tuneFares } from './pricing';
 import { describeShortfall, ENTRANT_SLOTS, grantSlots, HUB_SLOTS, rotationShortfall } from './slots';
 import { canOperate, legCosts, NEVER, wake } from './ops';
@@ -344,10 +344,7 @@ export function closeHub(sim: Sim, airlineId: number, airport: AirportId): Resul
 }
 
 function flipRoute(sim: Sim, r: Route): void {
-  settlePools(sim, r);
   [r.a, r.b] = [r.b, r.a];
-  r.pool.reverse();
-  r.connPool.reverse();
   r.rate.reverse();
   r.connRate.reverse();
 }
@@ -398,9 +395,6 @@ export function openRoute(sim: Sim, airlineId: number, a: AirportId, b: AirportI
     flightNo: al.nextFlightNo,
     maturity: 0.4,
     promoUntil: 0,
-    pool: [[0, 0, 0], [0, 0, 0]],
-    connPool: [[0, 0, 0], [0, 0, 0]],
-    poolTime: g.time,
     rate: [[0, 0, 0], [0, 0, 0]],
     connRate: [[0, 0, 0], [0, 0, 0]],
     connFare: [m.ref[0] * 0.6, m.ref[1] * 0.6, m.ref[2] * 0.6],
@@ -485,6 +479,7 @@ export function setRotation(sim: Sim, acId: number, routeIds: number[]): Result 
   }
   ac.rotation = unique;
   ac.rotIndex = -1;
+  sim.legs.delete(ac.id);
   const al = sim.game.airlines[ac.airline];
   for (const rid of new Set([...before, ...unique])) {
     const r = sim.routeById.get(rid);

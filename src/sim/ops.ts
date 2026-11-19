@@ -4,7 +4,7 @@ import { AIRCRAFT_TYPE, totalSeats } from './data/aircraft';
 import { AIRPORT, airportDistance } from './data/airports';
 import { BOOKING_SWING } from './demand';
 import { earn, feeFactor, fuelPriceFor, hubDiscount, labourFactor, ownershipPerDay, spend } from './finance';
-import { aircraftAgeYears, blockMinutes, getMarket, legsPerDay, maxBlockMinutes, NIGHT_STOP_BLOCK, settlePools } from './market';
+import { aircraftAgeYears, blockMinutes, getMarket, legsPerDay, maxBlockMinutes, NIGHT_STOP_BLOCK, offerOf, rotationFrequency } from './market';
 import { chance, rand, randRange } from './rng';
 import type { Aircraft, AircraftType, Airline, AirportId, Route, Triple } from './types';
 import type { Sim } from './sim';
@@ -335,27 +335,24 @@ function fly(sim: Sim, ac: Aircraft, route: Route, to: AirportId, t: number): bo
     return false;
   }
 
-  // Boarding: take waiting passengers from the booking pools.
+  // Boarding. Each departure draws its share of the route's daily demand, give or take:
+  // how many people want this particular flight varies a good deal from one departure
+  // to the next, and those who cannot get a seat on it go elsewhere.
   const dir = from === route.a ? 0 : 1;
-  settlePools(sim, route);
+  const freq = offerOf(sim, route).freq || rotationFrequency(sim, ac);
+  const share = freq > 0 ? 1 / freq : 0;
   const pax: Triple = [0, 0, 0];
   let connPax = 0;
   let tickets = 0;
   const ticketsByClass: Triple = [0, 0, 0];
   for (let c = 0; c < 3; c++) {
-    const local = route.pool[dir][c];
-    const conn = route.connPool[dir][c];
+    const local = route.rate[dir][c] * share;
+    const conn = route.connRate[dir][c] * share;
     if (local + conn <= 0 || ac.cabin[c] <= 0) continue;
-    // How many of those waiting want this particular departure varies a good deal
-    // from flight to flight. Those who cannot get a seat on it go elsewhere.
     const u = 1 - BOOKING_SWING + 2 * BOOKING_SWING * rand(g);
-    const wantLocal = local * u;
-    const wantConn = conn * u;
     // Full-fare local passengers get seats before prorated connections.
-    const takenLocal = Math.min(ac.cabin[c], Math.floor(wantLocal + rand(g)));
-    const takenConn = Math.max(0, Math.min(ac.cabin[c] - takenLocal, Math.floor(wantConn + rand(g))));
-    route.pool[dir][c] = Math.max(0, local - Math.max(wantLocal, takenLocal));
-    route.connPool[dir][c] = Math.max(0, conn - Math.max(wantConn, takenConn));
+    const takenLocal = Math.min(ac.cabin[c], Math.floor(local * u + rand(g)));
+    const takenConn = Math.max(0, Math.min(ac.cabin[c] - takenLocal, Math.floor(conn * u + rand(g))));
     const taken = takenLocal + takenConn;
     if (taken <= 0) continue;
     pax[c] = taken;

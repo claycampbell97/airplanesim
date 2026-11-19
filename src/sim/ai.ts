@@ -9,6 +9,7 @@ import { AIRPORT, AIRPORTS, airportDistance } from './data/airports';
 import { baseDemand } from './demand';
 import { emptyLedger, ledgerProfit, marketLease, DAYS_PER_MONTH } from './finance';
 import { dailyRoundTrips, estimateService, getMarket, roundTripMinutes } from './market';
+import { serviceFares } from './pricing';
 import { planShortfall } from './slots';
 import { canOperate, NEVER, planFlight } from './ops';
 import { chance, hash01, rand, randInt, randRange } from './rng';
@@ -82,16 +83,20 @@ function evaluate(sim: Sim, al: Airline, hub: AirportId, dest: AirportId, types:
     let est = estimateService(sim, al, hub, dest, typeId, cabin, 1, price, t.comfort, undefined, true);
     // An aircraft far too big for the market will not be rescued by sharing it.
     if (est.loadFactor < 0.17) continue;
+    // From here on, at the fares revenue management would settle on.
+    let fares = serviceFares(sim, al, hub, dest, typeId, cabin, 1, t.comfort, price);
+    est = estimateService(sim, al, hub, dest, typeId, cabin, 1, fares, t.comfort, undefined, true);
     while (est.loadFactor < 0.62 && slots < 4) {
       slots += 1;
-      est = estimateService(sim, al, hub, dest, typeId, cabin, 1 / slots, price, t.comfort, undefined, true);
+      fares = serviceFares(sim, al, hub, dest, typeId, cabin, 1 / slots, t.comfort, price);
+      est = estimateService(sim, al, hub, dest, typeId, cabin, 1 / slots, fares, t.comfort, undefined, true);
     }
     if (est.loadFactor < 0.55) continue;
     // No slots, no flights.
     if (planShortfall(sim, al, hub, dest, est.freq).length) continue;
     const legs = est.freq * 2;
     const ownership = marketLease(typeId, 6) / DAYS_PER_MONTH / slots;
-    const plan = planFlight(sim, al, typeId, cabin, 6, ownership, hub, dest, est.pax, price, legs);
+    const plan = planFlight(sim, al, typeId, cabin, 6, ownership, hub, dest, est.pax, fares, legs);
     if (plan.profitPerDay <= 0) continue;
     // How many aircraft the market could take before load factors sag.
     const seats = totalSeats(cabin);

@@ -11,11 +11,12 @@ import {
   chargeFixedCosts, closeMonth, emptyLedger, ledgerProfit, ledgerRevenue, overdraftLimit, serviceLoans,
 } from './finance';
 import {
-  aircraftAgeYears, attachRoute, cabinComfort, refreshAllMarkets, refreshConnections, refreshWorldFactors,
+  aircraftAgeYears, attachRoute, cabinComfort, getMarket, refreshAllMarkets, refreshConnections, refreshMarket,
+  refreshWorldFactors, routeChanged,
 } from './market';
 import type { Market, Offer } from './market';
 import { checkObjectives, initialObjectives } from './objectives';
-import { manageFares } from './pricing';
+import { faresManaged, manageFares, tuneFares } from './pricing';
 import { grantSlots, homeSlots } from './slots';
 import { stepAircraft } from './ops';
 import { emptyStats } from './actions';
@@ -78,6 +79,8 @@ export class Sim {
   /** Bumped whenever the seasonal/event multipliers change. */
   factorStamp = 0;
   offers = new Map<number, Offer>();
+  /** Flights per day by aircraft id, cached like the offers. */
+  legs = new Map<number, number>();
   routeById = new Map<number, Route>();
   acById = new Map<number, Aircraft>();
   season = new Float32Array(AIRPORTS.length).fill(1);
@@ -234,6 +237,7 @@ export class Sim {
       if (i >= 0) r.aircraft.splice(i, 1);
       this.offers.delete(r.id);
     }
+    this.legs.delete(ac.id);
     this.game.aircraft.splice(this.game.aircraft.indexOf(ac), 1);
     this.unindexAircraft(ac);
   }
@@ -259,6 +263,14 @@ export class Sim {
   }
 
   onDelivered(ac: Aircraft): void {
+    // The routes it was promised to gain capacity now: bring their demand and fares up to date.
+    const al = this.game.airlines[ac.airline];
+    for (const rid of ac.rotation) {
+      const r = this.routeById.get(rid);
+      if (!r) continue;
+      routeChanged(this, r);
+      if (faresManaged(al, r) && tuneFares(this, r, undefined, 30)) refreshMarket(this, getMarket(this, r.a, r.b));
+    }
     if (ac.airline !== 0) return;
     const t = AIRCRAFT_TYPE[ac.type];
     addNews(this, 'good', `${typeName(t)} ${ac.reg} delivered`, `Your new aircraft has arrived at ${ac.base} and is ready to be assigned to a route.`, { airport: ac.base });
@@ -306,7 +318,9 @@ export class Sim {
       this.dirtyAirlines.clear();
     }
 
-    if (g.time >= this.nextScan) {
+    // Aircraft events carry their own exact times, so they can be worked through in
+    // batches a few minutes apart rather than by walking the whole fleet every minute.
+    if (g.time >= this.nextScan && (g.time & 3) === 0) {
       const t0 = performance.now();
       let next = Number.MAX_SAFE_INTEGER;
       const list = g.aircraft;
@@ -350,6 +364,7 @@ export class Sim {
     }
     // Reputations and on-time records just moved: forget yesterday's product ratings.
     this.offers.clear();
+    this.legs.clear();
     lap('airlines');
 
     for (const al of g.airlines) {

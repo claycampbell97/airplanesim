@@ -20,13 +20,14 @@ function report(sim: Sim, label: string) {
     // One line to compare runs by.
     const rivals = g.airlines.filter((a) => !a.isPlayer && a.history.length);
     const margins = rivals.map((a) => {
-      const h = a.history.slice(-3);
+      // A full year where there is one, so that the season does not colour the answer.
+      const h = a.history.slice(-12);
       const rev = h.reduce((n, r) => n + ledgerRevenue(r), 0);
       return rev > 0 ? h.reduce((n, r) => n + ledgerProfit(r), 0) / rev : 0;
     }).sort((x, y) => x - y);
     let ask = 0;
     let rpk = 0;
-    for (const a of rivals) for (const r of a.history.slice(-3)) { ask += r.ask; rpk += r.rpk; }
+    for (const a of rivals) for (const r of a.history.slice(-12)) { ask += r.ask; rpk += r.rpk; }
     const fare = g.routes.length ? g.routes.reduce((n, r) => n + r.price[0] / sim.markets.get(pairKeyOf(r))!.ref[0], 0) / g.routes.length : 0;
     console.log(`SUMMARY ${label}: ${margins.filter((m) => m > 0).length}/${rivals.length} rivals profitable, median margin ${(margins[Math.floor(margins.length / 2)] * 100).toFixed(1)}%, quartiles ${(margins[Math.floor(margins.length / 4)] * 100).toFixed(1)}% / ${(margins[Math.floor(margins.length * 0.75)] * 100).toFixed(1)}%, load factor ${((rpk / Math.max(1, ask)) * 100).toFixed(1)}%, mean fare level ${(fare * 100).toFixed(0)}%, aircraft ${g.aircraft.length}, routes ${g.routes.length}`);
   }
@@ -52,11 +53,13 @@ function report(sim: Sim, label: string) {
 }
 
 describe('simulation', () => {
-  it('runs a world of rival airlines without blowing up', () => {
+  it('runs a world of rival airlines without blowing up', { timeout: 300_000 }, () => {
     const t0 = performance.now();
     const sim = Sim.create({ name: 'Test Air', code: 'TA', hq: 'LHR', livery: LIVERY, difficulty: 'standard', seed: 12345 });
     const t1 = performance.now();
-    const months = Number(process.env.MONTHS ?? 4);
+    // A little over a year: airlines lose money in a northern winter and make it back in
+    // summer, so anything shorter says more about the season than about the economy.
+    const months = Number(process.env.MONTHS ?? 13);
     for (let d = 0; d < months * 30; d++) sim.advance(1440);
     const t2 = performance.now();
     if (process.env.REPORT) {
@@ -72,14 +75,26 @@ describe('simulation', () => {
     }
     for (const r of g.routes) {
       for (let d = 0; d < 2; d++) for (let c = 0; c < 3; c++) {
-        expect(Number.isFinite(r.pool[d][c])).toBe(true);
-        expect(r.pool[d][c]).toBeGreaterThanOrEqual(0);
+        expect(Number.isFinite(r.rate[d][c])).toBe(true);
+        expect(r.rate[d][c]).toBeGreaterThanOrEqual(0);
       }
     }
-    // Most rivals should be making money in a normal world.
+    // Most rivals should be making money over a year in a normal world, without it being easy.
     const rivals = g.airlines.filter((a) => !a.isPlayer && a.history.length);
-    const profitable = rivals.filter((a) => a.history.slice(-3).reduce((n, r) => n + ledgerProfit(r), 0) > 0);
-    expect(profitable.length).toBeGreaterThan(rivals.length * 0.5);
+    const yearProfit = (a: (typeof rivals)[number]) => a.history.slice(-12).reduce((n, r) => n + ledgerProfit(r), 0);
+    const yearRevenue = (a: (typeof rivals)[number]) => a.history.slice(-12).reduce((n, r) => n + ledgerRevenue(r), 0);
+    const profitable = rivals.filter((a) => yearProfit(a) > 0);
+    expect(profitable.length).toBeGreaterThan(rivals.length * 0.65);
+    const margins = rivals.map((a) => yearProfit(a) / Math.max(1, yearRevenue(a))).sort((x, y) => x - y);
+    const median = margins[Math.floor(margins.length / 2)];
+    expect(median).toBeGreaterThan(0.02);
+    expect(median).toBeLessThan(0.16);
+    // Aircraft fly with realistic loads: neither half empty nor implausibly full.
+    let ask = 0;
+    let rpk = 0;
+    for (const a of rivals) for (const r of a.history.slice(-12)) { ask += r.ask; rpk += r.rpk; }
+    expect(rpk / ask).toBeGreaterThan(0.74);
+    expect(rpk / ask).toBeLessThan(0.9);
   });
 
   it('round-trips through a save file', () => {

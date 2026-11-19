@@ -8,7 +8,7 @@
 import { AIRPORT } from './data/airports';
 import { expectedBoarded } from './demand';
 import { feeFactor, labourFactor } from './finance';
-import { blockMinutes, getMarket, marketInputs, offerOf, splitMarket } from './market';
+import { blockMinutes, dailyRoundTrips, estimateConnections, getMarket, marketInputs, offerOf, serviceInputs, serviceQuality, splitMarket } from './market';
 import type { Market, OfferInput } from './market';
 import { ancillaryPerPax } from './ops';
 import type { Airline, AirportId, Route, Triple } from './types';
@@ -148,6 +148,87 @@ export function settledFares(sim: Sim, al: Airline, m: Market, inputs: OfferInpu
     fare = next;
   }
   return fare;
+}
+
+/**
+ * A fast estimate of where revenue management would take a service's fares: two
+ * looks at the market give the slope of demand against price, and from that the
+ * fare at which demand just fills the seats, but never below the fare where a
+ * further cut stops adding to revenue.
+ */
+export function quickFares(sim: Sim, al: Airline, m: Market, inputs: OfferInput[], index: number, s: FareCase, start: Triple): Triple {
+  const band = fareBand(al);
+  const mine = inputs[index];
+  const keep = mine.price;
+  const clampFare = (cls: number, f: number) => Math.round(Math.max(m.ref[cls] * band[0], Math.min(m.ref[cls] * band[1], f)));
+  const p0: Triple = [clampFare(0, start[0]), clampFare(1, start[1]), clampFare(2, start[2])];
+  const p1: Triple = [clampFare(0, start[0] * 0.88), clampFare(1, start[1] * 0.88), clampFare(2, start[2] * 0.88)];
+  // (At the bottom of the band the second look goes upwards instead.)
+  for (let c = 0; c < 3; c++) if (p1[c] === p0[c]) p1[c] = clampFare(c, start[c] * 1.12);
+  mine.price = p0;
+  const l0 = splitMarket(m, inputs)[index];
+  mine.price = p1;
+  const l1 = splitMarket(m, inputs)[index];
+  mine.price = keep;
+
+  const out: Triple = [p0[0], p0[1], p0[2]];
+  for (let c = 0; c < 3; c++) {
+    if (s.seats[c] <= 0 || s.freq <= 0 || l0[c] <= 0 || l1[c] <= 0 || p0[c] === p1[c]) continue;
+    const xa = p0[c] / m.ref[c];
+    const xb = p1[c] / m.ref[c];
+    // Demand ∝ exp(−beta · fare level) near here.
+    const beta = Math.max(0.4, Math.log(l1[c] / l0[c]) / (xa - xb));
+    const seats = s.freq * s.seats[c];
+    // Local demand a little above the seats left after half the connecting passengers on offer.
+    const target = Math.max(seats * 0.25, seats * 1.03 - Math.min(s.conn[c], seats) * 0.5);
+    let x = xa + Math.log(l0[c] / target) / beta;
+    x = Math.max(x, 1 / beta + passengerCost(sim, al, s, c, p0[c]) / m.ref[c]);
+    out[c] = clampFare(c, x * m.ref[c]);
+  }
+  return out;
+}
+
+/**
+ * The fares a service would end up with under revenue management: for forecasts and
+ * for rivals weighing up a route. `exact` runs the real fare steps to rest from the
+ * quick estimate; without it the estimate alone is returned.
+ */
+export function serviceFares(
+  sim: Sim,
+  al: Airline,
+  a: AirportId,
+  b: AirportId,
+  typeId: string,
+  cabin: Triple,
+  aircraftCount: number,
+  comfort: number,
+  start: Triple,
+  opts: { existing?: Route; exact?: boolean; connections?: boolean; boost?: number; rival?: OfferInput } = {},
+): Triple {
+  const m = getMarket(sim, a, b);
+  const freq = aircraftCount > 0 ? dailyRoundTrips(typeId, m.dist) * aircraftCount : 0;
+  if (freq <= 0) return start;
+  const conn: Triple = [0, 0, 0];
+  const connRev: Triple = [0, 0, 0];
+  if (opts.connections) {
+    for (const [hub, dest] of [[a, b], [b, a]] as const) {
+      const e = estimateConnections(sim, al, hub, dest, freq, cabin, start, opts.existing);
+      for (let c = 0; c < 3; c++) {
+        conn[c] += e.pax[c];
+        connRev[c] += e.pax[c] * e.fare[c];
+      }
+    }
+  }
+  const s: FareCase = {
+    a, b, hours: blockMinutes(typeId, m.dist) / 60, freq, seats: cabin, conn,
+    connFare: [0, 1, 2].map((c) => (conn[c] > 0 ? connRev[c] / conn[c] : m.ref[c] * 0.6)) as Triple,
+  };
+  const mine: OfferInput = { freq, seats: cabin, price: start, quality: serviceQuality(al, comfort), boost: opts.boost ?? 1 };
+  const inputs = serviceInputs(sim, al, m, mine, opts.existing);
+  if (opts.rival) inputs.splice(inputs.length - 1, 0, opts.rival);
+  const index = inputs.length - 1;
+  const quick = quickFares(sim, al, m, inputs, index, s, start);
+  return opts.exact ? settledFares(sim, al, m, inputs, index, s, quick) : quick;
 }
 
 /** Whether revenue management sets this route's fares. Rivals always use it. */

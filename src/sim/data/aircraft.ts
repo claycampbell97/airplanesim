@@ -241,7 +241,7 @@ const ROWS: Row[] = [
   {
     id: 'b748', maker: 'Boeing', model: '747-8', category: 'jumbo',
     seats: 600, range: 14320, speed: 914, fuelKm: 10.4, fuelCycle: 4200,
-    price: 88 * M, lease: 720 * K, mtow: 447.7, runway: 3050, turnaround: 105,
+    price: 70 * M, lease: 560 * K, mtow: 447.7, runway: 3050, turnaround: 105,
     pilots: 2, cabinCrew: 14, maintHour: 2500, maintCycle: 1500, cargo: 18, comfort: 0.78,
     inProduction: false, usedAge: [8, 14],
     blurb: 'The queen of the skies, final edition. Four engines, an upper deck and undeniable presence.',
@@ -250,10 +250,10 @@ const ROWS: Row[] = [
   {
     id: 'a388', maker: 'Airbus', model: 'A380-800', category: 'jumbo',
     seats: 780, range: 14800, speed: 903, fuelKm: 12.6, fuelCycle: 5000,
-    price: 72 * M, lease: 690 * K, mtow: 575, runway: 2900, turnaround: 120,
+    price: 48 * M, lease: 430 * K, mtow: 575, runway: 2900, turnaround: 120,
     pilots: 2, cabinCrew: 18, maintHour: 3000, maintCycle: 1800, cargo: 9, comfort: 0.94,
     inProduction: false, usedAge: [8, 16],
-    blurb: 'Two full decks of seats. Ruinous half empty, unbeatable when you can fill it between mega hubs.',
+    blurb: 'Two full decks of seats, and cheap to pick up now that few airlines want one. Ruinous half empty; it earns its keep where slots are scarce and a mega hub feeds it.',
     shape: { length: 72.7, span: 79.75, diameter: 7.14, engines: 4, engineMount: 'wing', tail: 'conventional', winglet: 'fence', sweep: 33.5, upperDeck: 'full', engineDiameter: 3.2 },
   },
 ];

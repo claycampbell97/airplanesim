@@ -275,11 +275,7 @@ export interface Route {
   maturity: number;
   /** Local-demand boost from a launch promotion until this time. */
   promoUntil: number;
-  /** Booking pools: waiting passengers per direction (0: a→b, 1: b→a) and class. */
-  pool: [Triple, Triple];
-  connPool: [Triple, Triple];
-  poolTime: number;
-  /** Inflow rates in passengers/day, maintained by the market model. */
+  /** Demand in passengers/day per direction (0: a→b, 1: b→a) and class, maintained by the market model. */
   rate: [Triple, Triple];
   connRate: [Triple, Triple];
   /** Average revenue per connecting passenger on this leg. */
