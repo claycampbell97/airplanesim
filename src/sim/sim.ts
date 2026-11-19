@@ -45,8 +45,8 @@ export interface Tuning {
 
 export const TUNING: Record<Difficulty, Tuning> = {
   relaxed: { startCash: 300e6, demand: 1.15, cost: 0.9, interest: -0.005, aircraftPrice: 0.92, aiScale: 0.7, aiAggression: 0.6, fuelVolatility: 0.7 },
-  standard: { startCash: 150e6, demand: 1.06, cost: 0.97, interest: 0, aircraftPrice: 1, aiScale: 1, aiAggression: 1, fuelVolatility: 1 },
-  ruthless: { startCash: 80e6, demand: 1, cost: 1.03, interest: 0.015, aircraftPrice: 1.04, aiScale: 1.2, aiAggression: 1.4, fuelVolatility: 1.4 },
+  standard: { startCash: 150e6, demand: 1.03, cost: 1, interest: 0, aircraftPrice: 1, aiScale: 1, aiAggression: 1, fuelVolatility: 1 },
+  ruthless: { startCash: 80e6, demand: 0.98, cost: 1.06, interest: 0.015, aircraftPrice: 1.04, aiScale: 1.2, aiAggression: 1.4, fuelVolatility: 1.4 },
 };
 
 export const DIFFICULTY_INFO: Record<Difficulty, { name: string; blurb: string }> = {
@@ -143,6 +143,8 @@ export class Sim {
       nextId: 1, flags: {}, over: false,
     };
     const sim = new Sim(game);
+    // The home allocation stands in for the newcomer's pair of slots there.
+    if (AIRPORT[opts.hq].slotLimited) game.flags[`slots:${opts.hq}`] = 1;
 
     // Rivals. Each is seeded with an established network and fleet.
     for (const tpl of AIRLINE_TEMPLATES) {

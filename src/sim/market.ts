@@ -50,7 +50,7 @@ export interface Offer {
 }
 
 /** Share of each class's demand that the unsimulated incumbent carriers have seats for. */
-const OTHERS_CAPACITY: Triple = [0.85, 0.85, 0.8];
+const OTHERS_CAPACITY: Triple = [0.93, 0.93, 0.88];
 /** At a slot-limited airport the incumbents can only field this share of the seats they would like to. */
 const SLOT_SCARCITY = 0.78;
 /** ...and price their seats this much above the reference fare, which is roughly what thins demand to fit. */

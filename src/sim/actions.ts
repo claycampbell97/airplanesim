@@ -9,7 +9,7 @@ import {
 } from './finance';
 import { attachRoute, detachRoute, findMarket, getMarket, refreshConnections, refreshMarket, routeChanged } from './market';
 import { faresManaged, tuneFares } from './pricing';
-import { describeShortfall, ENTRANT_SLOTS, grantSlots, HUB_SLOTS, rotationShortfall } from './slots';
+import { describeShortfall, grantEntrantSlots, grantSlots, HUB_SLOTS, rotationShortfall } from './slots';
 import { canOperate, legCosts, NEVER, wake } from './ops';
 import { randInt } from './rng';
 import type { Aircraft, Airline, AirportId, Hub, Order, Policy, Route, RouteStats, Triple } from './types';
@@ -405,7 +405,7 @@ export function openRoute(sim: Sim, airlineId: number, a: AirportId, b: AirportI
   if (al.isPlayer) {
     route.auto = al.autoFares !== false;
     // The set-up fee at a slot-limited airport buys a newcomer's first pair of slots.
-    for (const id of [a, b]) if (AIRPORT[id].slotLimited && !(al.slots?.[id])) grantSlots(al, id, ENTRANT_SLOTS);
+    for (const id of [a, b]) grantEntrantSlots(sim, al, id);
   }
   al.nextFlightNo += 2;
   g.routes.push(route);
@@ -519,6 +519,12 @@ export function setPrice(sim: Sim, routeId: number, price: Triple): Result {
   }
   routeChanged(sim, r);
   return ok(undefined);
+}
+
+/** Records the forecast a route was opened on. */
+export function noteForecast(sim: Sim, routeId: number, load: number, profitPerDay: number): void {
+  const r = sim.routeById.get(routeId);
+  if (r) r.forecast = { load, profitPerDay, time: sim.game.time };
 }
 
 /** Hands a route's fares to revenue management, or takes them back. */

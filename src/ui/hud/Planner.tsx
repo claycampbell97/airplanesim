@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from 'react';
 import { Check, Plus, X } from 'lucide-react';
-import { acquireAircraft, findRoute, newLease, openRoute, routeSetupCost, setRotation } from '../../sim/actions';
+import { acquireAircraft, findRoute, newLease, noteForecast, openRoute, routeSetupCost, setRotation } from '../../sim/actions';
 import { AIRCRAFT_TYPE, AIRCRAFT_TYPES, typeName } from '../../sim/data/aircraft';
 import { AIRPORT } from '../../sim/data/airports';
 import { leaseCapacity, leaseCommitment } from '../../sim/finance';
 import { OTHER_AIRLINES } from '../../sim/market';
-import { planRoute, suggestRoutes } from '../../sim/planner';
+import { forecastRoute, suggestRoutes } from '../../sim/planner';
 import { buySlots, planShortfall, slotsCost, slotsFreeFor, slotsToBuy } from '../../sim/slots';
 import { formatDate } from '../../sim/time';
 import { deliveryDaysFor } from '../../sim/actions';
@@ -37,7 +37,13 @@ export function Planner() {
   const existing = to ? findRoute(sim, 0, plan.from, to) : undefined;
   // A specific aircraft that already flies other routes only gives this one a share of its day.
   const share = aircraft ? 1 / (aircraft.rotation.length + 1) : count;
-  const forecast = to ? planRoute(sim, p, plan.from, to, plan.type, { aircraft, count: share }) : null;
+  // Three views of the same plan: once established, in its first month, and with a rival on the route.
+  const range = useMemo(
+    () => (to ? forecastRoute(sim, p, plan.from, to, plan.type, { aircraft, count: share }) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [plan.from, to, plan.type, plan.aircraft, share, sim.revision, sim.game.day],
+  );
+  const forecast = range?.established ?? null;
   const dest = to ? AIRPORT[to] : null;
   const setup = to ? routeSetupCost(sim, p, plan.from, to) : 0;
   const idle = sim.fleetOf(0).filter((a) => a.type === plan.type && a.base === plan.from && a.rotation.length === 0);
@@ -56,6 +62,7 @@ export function Planner() {
     }
     const route = attempt(openRoute(sim, 0, plan.from, to), undefined, 'launch');
     if (!route) return;
+    if (mode !== 'only' && forecast) noteForecast(sim, route.id, forecast.estimate.loadFactor, forecast.profitPerDay);
     if (mode === 'assign' && aircraft) {
       attempt(setRotation(sim, aircraft.id, [...aircraft.rotation, route.id]), undefined, null);
     } else if (mode === 'idle') {
@@ -139,13 +146,21 @@ export function Planner() {
                   <div className="tile"><div className="k">Expected load</div><div className={cx('v', forecast.estimate.loadFactor < 0.6 && 'bad')}>{percent(forecast.estimate.loadFactor)}</div></div>
                   <div className="tile"><div className="k">Profit a day</div><div className={cx('v', forecast.profitPerDay < 0 ? 'bad' : 'good')}>{signedMoney(forecast.profitPerDay)}</div></div>
                 </div>
+                {range && (
+                  <dl className="kv small" title="The same plan at other moments: while travellers are still discovering the route, and if a competitor matches your flights">
+                    <dt>In the first month</dt>
+                    <dd><span className={range.firstMonth.profitPerDay < 0 ? 'bad' : 'good'}>{signedMoney(range.firstMonth.profitPerDay)}</span> <span className="dim">· {percent(range.firstMonth.estimate.loadFactor)} full</span></dd>
+                    <dt>If a rival moves in</dt>
+                    <dd><span className={range.contested.profitPerDay < 0 ? 'bad' : 'good'}>{signedMoney(range.contested.profitPerDay)}</span> <span className="dim">· {percent(range.contested.estimate.loadFactor)} full</span></dd>
+                  </dl>
+                )}
                 <dl className="kv small">
                   <dt>Distance</dt><dd>{km(forecast.dist)} · {duration(forecast.estimate.blockMinutes)}</dd>
                   <dt>Flights</dt><dd>{(forecast.estimate.freq * 2).toFixed(1)} a day ({forecast.estimate.freq.toFixed(1)} each way)</dd>
                   <dt>Demand</dt><dd>{integer(sum3(forecast.estimate.demand))} passengers a day each way</dd>
                   <dt>Passengers per flight</dt><dd>{integer(sum3(forecast.estimate.pax))} of {sum3(forecast.cabin)} seats</dd>
                   {sum3(forecast.estimate.conn) >= 1 && <><dt>…of which connecting</dt><dd>{integer(sum3(forecast.estimate.conn))}</dd></>}
-                  <dt>Economy fare</dt><dd>${forecast.price[0]}</dd>
+                  <dt>Economy fare</dt><dd>${forecast.price[0]} <span className="dim">({percent(forecast.price[0] / forecast.estimate.ref[0])} of the going rate)</span></dd>
                   {slotEnds.map((id) => (
                     <div key={id} style={{ display: 'contents' }}>
                       <dt>Slots at {id}</dt>
@@ -189,7 +204,9 @@ export function Planner() {
                     ))}
                   </div>
                 )}
-                <div className="tiny dim">A forecast for a mature route at today's demand. New routes take about six weeks to reach it, and seasons move it.</div>
+                <div className="tiny dim">{p.autoFares === false
+                  ? 'At the going rate for fares and today\'s demand, once the route is established.'
+                  : 'At the fares revenue management would settle on and today\'s demand, once the route is established.'} Seasons, fuel prices and your reputation will move it.</div>
               </>
             )}
           </div>

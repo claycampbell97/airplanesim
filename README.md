@@ -44,32 +44,40 @@ is actually crossing. The clock slows while you watch.
 
 **Real geography.** 667 airports in 194 countries, with real coordinates,
 elevations and runway lengths (hot-and-high airports and short runways limit what
-can operate there), slot-constrained hubs, and curfews for short-haul flying at
-night.
+can operate there) and curfews for short-haul flying at night. Seventeen of the
+world's most congested airports are slot-limited: you can only fly as many
+departures as you hold slots for, supply there is short and fares are firm, so
+the way to carry more is a bigger aircraft per slot.
 
 **A demand model, not a lookup table.** Passenger demand between any two cities
 comes from a gravity model (city size, wealth, distance, tourism, business ties,
 domestic and regional affinities) balanced so that each airport's traffic adds up
-to its real-world scale. Demand moves with the season, the day of the week, the
-economy and events. Three cabin classes respond differently to price and
-quality. Travellers you cannot seat spill to other airlines; travellers connect
-through your hubs.
+to its real-world scale. Demand moves with the season, the economy and events,
+and bookings swing from one departure to the next. Three cabin classes respond
+differently to price and quality. Travellers you cannot seat go to other
+airlines; travellers connect through your hubs.
 
 **28 aircraft types.** From the ATR 72 to the A380, each with range, payload,
-fuel burn, runway needs, maintenance and crew costs, and configurable cabins.
-Buy or lease, new or second-hand. Every type is modelled procedurally in 3D
+fuel burn, runway needs, maintenance and crew costs, daily flying hours they can
+realistically keep up, and configurable cabins. Buy or lease, new or second-hand. Every type is modelled procedurally in 3D
 (fuselage, wings, engines, landing gear, windows, lights) and painted in your
 livery: seven livery styles, ten tail emblems, any colours.
 
 **39 rival airlines.** Legacy carriers, low-cost carriers, regional and premium
 airlines, each with a home market and a temperament. They open and close routes,
-match fares, order aircraft and go bust.
+reprice within days when the market moves, order aircraft and go bust.
 
-**The business.** Fares by class, promotions, service and maintenance levels,
-wages and morale, marketing and reputation, hub development and transfer traffic,
-fuel hedging, loans and credit ratings, aircraft leases, cargo and ancillary
-revenue, punctuality and compensation, a full income statement and balance
-sheet.
+**The business.** Fares by class, set by hand or left to revenue management
+that moves each cabin's fare to where it earns the most; promotions, service and
+maintenance levels, wages and morale, marketing and reputation, hub development
+and transfer traffic, airport slots, fuel hedging, loans and credit ratings,
+aircraft leases, cargo and ancillary revenue, punctuality and compensation, a
+full income statement and balance sheet.
+
+**Forecasts you can hold to account.** The route planner uses the same market
+model the game runs on, at the fares the route will actually charge. It shows
+what to expect once the route is established, in its first month, and if a
+rival moves in; each route remembers what it was planned for.
 
 **A world that pushes back.** Fuel price swings, recessions and booms, strikes,
 storms, volcanic ash, tourism fashions, big events; decisions to take (union
@@ -89,15 +97,22 @@ pad over the globe, engines and slipstream in the flight view.
    to five or six hours; a turboprop or regional jet suits thin, short ones.
 3. **Open a route** from Routes (`N`) → *Plan on the globe*. The planner shows
    the aircraft's range, how much demand each destination has, and a forecast of
-   load factor and profit from the same model the game runs on.
+   load factor and profit: once established, in the first month, and if a rival
+   moves in.
 4. **Start the clock** (`Space`) and watch the first flights go out.
-5. **Tune.** Aim for load factors around 80%. Fuller than that: raise fares or
-   add capacity. Emptier: cut fares, fly a smaller aircraft, or let one aircraft
-   share several thin routes.
+5. **Leave the fares alone, or don't.** New routes have managed fares: every few
+   days each cabin's fare moves to where it earns the most. Your job is the
+   bigger picture: the right aircraft on the right route, and enough of them. A
+   route that stays cheap and still flies half empty has too many seats on it.
+   Switch any route to manual in its panel if you want the wheel.
 6. **Build a hub.** When many routes meet at one airport, passengers connect
    between them and fill seats that local demand alone would not. That feed, and
    a good reputation, are what make long-haul widebodies pay: start small.
-7. **Mind the cash.** Winters are lean, fuel is volatile and rivals react. Hedge
+7. **Mind the slots.** At slot-limited airports, each departure a day needs a
+   slot. You get a few with your home base and with each base you build; buy the
+   rest on the airport's card, at a price that rises with every one. When slots
+   are what holds you back, fly bigger aircraft.
+8. **Mind the cash.** Winters are lean, fuel is volatile and rivals react. Hedge
    fuel when it is cheap, and keep a reserve.
 
 | Key | Action |
@@ -120,6 +135,8 @@ src/
   sim/        The simulation. No DOM, no rendering: runs in Node for the tests.
     data/       Airports (generated), aircraft types, rival airline templates
     demand.ts   Gravity demand model, class split, reference fares, seasons
+    pricing.ts  Revenue management: fares that move to where each cabin earns most
+    slots.ts    Departure slots at congested airports
     market.ts   Market share between airlines, booking pools, connections
     ops.ts      The flight state machine: turnarounds, legs, delays, costs
     finance.ts  Ledgers, loans, leases, credit, valuation

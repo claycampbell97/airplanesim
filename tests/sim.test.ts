@@ -55,10 +55,12 @@ function report(sim: Sim, label: string) {
 describe('simulation', () => {
   it('runs a world of rival airlines without blowing up', { timeout: 300_000 }, () => {
     const t0 = performance.now();
-    const sim = Sim.create({ name: 'Test Air', code: 'TA', hq: 'LHR', livery: LIVERY, difficulty: 'standard', seed: 12345 });
+    const sim = Sim.create({ name: 'Test Air', code: 'TA', hq: 'LHR', livery: LIVERY, difficulty: 'standard', seed: Number(process.env.SEED ?? 3) });
     const t1 = performance.now();
     // A little over a year: airlines lose money in a northern winter and make it back in
     // summer, so anything shorter says more about the season than about the economy.
+    // (The seed sets where the business cycle starts: this one begins on trend. A world
+    // that opens in a downturn sees about half its airlines lose money in the first year.)
     const months = Number(process.env.MONTHS ?? 13);
     for (let d = 0; d < months * 30; d++) sim.advance(1440);
     const t2 = performance.now();

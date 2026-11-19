@@ -11,6 +11,7 @@ import type { AircraftCategory, AircraftType } from '../../sim/types';
 import { integer, km, money } from '../app/format';
 import { openPanel, setState, useSim } from '../app/store';
 import { AircraftPreview } from '../components/AircraftPreview';
+import { MAX_BLOCK_HOURS } from '../../sim/market';
 import { cx, Meter, Panel, Seg, Tabs } from '../components/ui';
 
 const CATEGORIES: (AircraftCategory | 'all')[] = ['all', 'turboprop', 'regional', 'narrowbody', 'widebody', 'jumbo'];
@@ -27,6 +28,7 @@ function Specs({ type }: { type: AircraftType }) {
       <dt>Runway needed</dt><dd>{integer(type.runway)} m</dd>
       <dt>Fuel burn</dt><dd>{type.fuelKm.toFixed(2)} kg/km <span className="dim">({((type.fuelKm / type.seats) * 100).toFixed(2)} per 100 seat-km)</span></dd>
       <dt>Turnaround</dt><dd>{type.turnaround} min</dd>
+      <dt>Flying time</dt><dd>up to {MAX_BLOCK_HOURS[type.category]} hours a day</dd>
       <dt>Belly cargo</dt><dd>{type.cargo} t</dd>
       <dt>Maintenance</dt><dd>{money(type.maintHour)}/flight hour</dd>
     </dl>

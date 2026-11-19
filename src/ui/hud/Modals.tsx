@@ -205,9 +205,10 @@ function HelpModal() {
         <div className="col gap-6 muted" style={{ lineHeight: 1.55 }}>
           <p><b className="strong" style={{ color: 'var(--text)' }}>1. Get an aircraft.</b> Lease or buy one in the aircraft market. Leasing is cheap up front; buying costs less in the long run.</p>
           <p><b className="strong" style={{ color: 'var(--text)' }}>2. Open a route.</b> In Routes, choose “New route”, pick an aircraft type and click a destination. The forecast uses the same model as the live game.</p>
-          <p><b className="strong" style={{ color: 'var(--text)' }}>3. Tune it.</b> Aim for load factors around 80%. Fuller than that? Raise fares. Emptier? Cut fares, use a smaller aircraft, or share one aircraft between several thin routes.</p>
+          <p><b className="strong" style={{ color: 'var(--text)' }}>3. Let the fares look after themselves.</b> New routes have managed fares: every few days each cabin’s fare moves to where it earns the most. Your job is the right aircraft on the right route. A route that stays cheap and still flies half empty has too many seats on it: use a smaller aircraft, or share one between several thin routes. Any route can be switched to manual fares in its panel.</p>
           <p><b className="strong" style={{ color: 'var(--text)' }}>4. Build a hub.</b> When many routes meet at a hub, passengers connect between them and fill seats that local demand alone would not. That feed, and a good reputation, are what make long-haul widebodies pay.</p>
-          <p><b className="strong" style={{ color: 'var(--text)' }}>5. Mind the cash.</b> Fuel prices swing, seasons turn and rivals react. Hedge fuel when it is cheap and keep a reserve for winter.</p>
+          <p><b className="strong" style={{ color: 'var(--text)' }}>5. Mind the slots.</b> At slot-constrained airports each departure a day needs a slot. Buy more on the airport’s card, or carry more per slot with a bigger aircraft.</p>
+          <p><b className="strong" style={{ color: 'var(--text)' }}>6. Mind the cash.</b> Fuel prices swing, seasons turn and rivals react. Hedge fuel when it is cheap and keep a reserve for winter.</p>
         </div>
         <table className="tbl compact">
           <tbody>

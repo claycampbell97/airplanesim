@@ -110,6 +110,12 @@ function RouteDetail({ route }: { route: Route }) {
         <Tile label="Profit last month" value={<span className={lastProfit < 0 ? 'bad' : undefined}>{Number.isNaN(lastProfit) ? '—' : money(lastProfit)}</span>}
           note={route.prev.revenue > 0 ? `${percent((route.prev.revenue - route.prev.cost) / route.prev.revenue)} margin` : undefined} />
       </div>
+      {route.forecast && (
+        <div className="small muted">
+          Planned on {formatDate(route.forecast.time)} for {percent(route.forecast.load)} full and <span className="num">{signedMoney(route.forecast.profitPerDay)}</span> a day once established.
+          {route.prev.flights >= 8 && <> Last month: {percent(loadFactorOf(route.prev))} full, <span className={cx('num', lastProfit < 0 && 'bad')}>{signedMoney(lastProfit / 30.4)}</span> a day.</>}
+        </div>
+      )}
       {route.maturity < 0.98 && (
         <div className="small muted">New route: travellers are still discovering it ({percent(route.maturity)} of its potential). {promoActive ? 'A promotion is running.' : ''}</div>
       )}

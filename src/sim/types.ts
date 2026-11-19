@@ -290,6 +290,8 @@ export interface Route {
   lossMonths: number;
   /** Fares are set by revenue management rather than by hand (the player's routes; rivals always use it). */
   auto?: boolean;
+  /** What the planner promised when the route was opened, to hold the forecast to account. */
+  forecast?: { load: number; profitPerDay: number; time: number };
 }
 
 export type AircraftPhase = 'delivery' | 'idle' | 'turnaround' | 'enroute' | 'maintenance' | 'grounded';

@@ -556,7 +556,7 @@ if (import.meta.env.DEV || new URLSearchParams(location.search).has('debug')) {
   Object.assign(window as object, {
     __app: {
       game, getState, setState, openPanel, setSpeed, setPaused, startPlan, showRoute, showAircraft, inspectAirport, inspectFlight, setChase,
-      saveGame, loadGame, quitToTitle, audio,
+      newGame, saveGame, loadGame, quitToTitle, audio,
       sim: { actions, planner }, airports: AIRPORT,
     },
   });

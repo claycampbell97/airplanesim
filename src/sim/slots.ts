@@ -68,10 +68,22 @@ export interface SlotShortfall {
   free: number;
 }
 
+/** Whether the airline is still owed the newcomer's pair of slots that comes with a first route to an airport. */
+export function entrantSlotsDue(sim: Sim, al: Airline, airport: AirportId): boolean {
+  return !al.ai && AIRPORT[airport].slotLimited && !sim.game.flags[`slots:${airport}`];
+}
+
+/** Hands over the newcomer's pair, once per airport. */
+export function grantEntrantSlots(sim: Sim, al: Airline, airport: AirportId): void {
+  if (!entrantSlotsDue(sim, al, airport)) return;
+  sim.game.flags[`slots:${airport}`] = 1;
+  grantSlots(al, airport, ENTRANT_SLOTS);
+}
+
 /** Slots free at an airport for a plan: a player's first route there comes with a newcomer's pair. */
 export function slotsFreeFor(sim: Sim, al: Airline, airport: AirportId, newRoute = false): number {
   const free = slotsFree(sim, al, airport);
-  return newRoute && !al.ai && !(al.slots?.[airport]) ? free + ENTRANT_SLOTS : free;
+  return newRoute && entrantSlotsDue(sim, al, airport) ? free + ENTRANT_SLOTS : free;
 }
 
 /**
