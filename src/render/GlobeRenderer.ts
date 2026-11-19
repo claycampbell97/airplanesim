@@ -40,6 +40,13 @@ export const QUALITY: Record<Quality, QualityPreset> = {
   ultra: { pixelRatio: 2.5, textures: '4k', viewSteps: 16, lightSteps: 5, bloom: true, segments: 256, stars: 10000, msaa: 4 },
 };
 
+function isHandheld(): boolean {
+  if (typeof window === 'undefined') return false;
+  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+  const touch = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+  return (touch && Math.min(screen.width, screen.height) <= 900) || (memory !== undefined && memory <= 2);
+}
+
 /** The automatic resolution scaling never goes below this fraction of the chosen quality. */
 const MIN_SCALE = 0.45;
 
@@ -145,6 +152,9 @@ export class GlobeRenderer {
   private time = 0;
   private skyFade = 0;
 
+  /** Phones and tablets: smaller textures and lighter anti-aliasing, whatever the quality setting. */
+  private frugal = isHandheld();
+  private hdr = true;
   /** Lower the render resolution automatically when frames take too long. */
   adaptive = true;
   private scale = 1;
@@ -186,13 +196,15 @@ export class GlobeRenderer {
   async load(onProgress?: (p: number) => void): Promise<void> {
     const q = QUALITY[this.quality];
     const base = import.meta.env.BASE_URL;
+    // Four 4K maps with their mip chains are a lot of memory for a phone.
+    const tier = this.frugal ? '2k' : q.textures;
     let done = 0;
     const tick = () => onProgress?.(++done / 5);
     const [day, night, aux, stars] = await Promise.all([
-      loadTexture(`${base}textures/earth_day_${q.textures}.jpg`, true, tick),
-      loadTexture(`${base}textures/earth_night_${q.textures}.jpg`, true, tick),
-      loadTexture(`${base}textures/earth_aux_${q.textures}.jpg`, false, tick),
-      loadTexture(`${base}textures/stars_${q.textures}.jpg`, true, tick),
+      loadTexture(`${base}textures/earth_day_${tier}.jpg`, true, tick),
+      loadTexture(`${base}textures/earth_night_${tier}.jpg`, true, tick),
+      loadTexture(`${base}textures/earth_aux_${tier}.jpg`, false, tick),
+      loadTexture(`${base}textures/stars_${tier}.jpg`, true, tick),
       this.borders.load(`${base}data/borders.bin`).then(tick, tick),
     ]);
     const aniso = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
@@ -209,13 +221,20 @@ export class GlobeRenderer {
 
   private buildComposer(): void {
     const q = QUALITY[this.quality];
-    const target = new THREE.WebGLRenderTarget(this.width, this.height, { type: THREE.HalfFloatType, samples: q.msaa });
+    // High dynamic range needs float render targets. The few GPUs without them
+    // get an ordinary 8-bit pipeline with no bloom rather than a black screen.
+    const gl = this.renderer.getContext();
+    this.hdr = !!(gl.getExtension('EXT_color_buffer_float') || gl.getExtension('EXT_color_buffer_half_float'));
+    const target = new THREE.WebGLRenderTarget(this.width, this.height, {
+      type: this.hdr ? THREE.HalfFloatType : THREE.UnsignedByteType,
+      samples: this.frugal ? Math.min(2, q.msaa) : q.msaa,
+    });
     this.composer = new EffectComposer(this.renderer, target);
     this.composer.addPass(new RenderPass(this.scene, this.controls.camera));
     this.chase ??= new ChaseView(this.renderer);
     this.composer.addPass(this.chase.pass);
     this.bloom = new UnrealBloomPass(new THREE.Vector2(this.width, this.height), 0.34, 0.55, 1.0);
-    this.bloom.enabled = q.bloom;
+    this.bloom.enabled = q.bloom && this.hdr;
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
   }
@@ -707,7 +726,7 @@ export class GlobeRenderer {
     this.retryAfter = 10;
     const q = QUALITY[quality];
     this.earth?.setAtmosphereQuality(q.viewSteps, q.lightSteps);
-    if (this.bloom) this.bloom.enabled = q.bloom;
+    if (this.bloom) this.bloom.enabled = q.bloom && this.hdr;
     this.resize();
   }
 

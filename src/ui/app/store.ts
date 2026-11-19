@@ -366,7 +366,11 @@ export function loadGameFromText(text: string): void {
 }
 
 export async function removeSave(slot: string): Promise<void> {
-  await eraseSave(slot);
+  try {
+    await eraseSave(slot);
+  } catch (e) {
+    toast('error', 'Could not remove the save', String((e as Error).message ?? e));
+  }
   setState({ saves: await listSaves() });
 }
 
