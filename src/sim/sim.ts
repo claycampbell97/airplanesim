@@ -123,9 +123,11 @@ export class Sim {
       totalPax: 0, totalFlights: 0, bankrupt: false, insolventDays: 0,
       nextFlightNo: 101, nextReg: 1, founded: 0,
     };
+    // Begin at breakfast time at the home base, so the first view of it is in daylight.
+    const startMinute = Math.round(((((7 - AIRPORT[opts.hq].lon / 15) % 24) + 24) % 24) * 60);
     const game: Game = {
       version: SAVE_VERSION, seed, rng: seed, difficulty: opts.difficulty,
-      time: 0, day: 0, month: 0,
+      time: startMinute, day: 0, month: 0,
       airlines: [player], aircraft: [], routes: [], orders: [], used: [], news: [], decisions: [],
       objectives: initialObjectives(),
       world: {
@@ -362,7 +364,8 @@ export class Sim {
     this.emit('day', g.day);
   }
 
-  private reputationTarget(al: Airline): number {
+  /** Where an airline's reputation is heading, given its product, punctuality, fleet and marketing. */
+  reputationTarget(al: Airline): number {
     const fleet = this.fleetOf(al.id).filter((a) => a.phase !== 'delivery');
     let comfort = 0.5;
     let age = 8;
