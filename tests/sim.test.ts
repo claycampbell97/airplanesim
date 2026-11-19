@@ -263,6 +263,29 @@ describe('simulation', () => {
     expect(sellSlot(sim, 0, 'LHR').ok).toBe(true);
   });
 
+  it('grandfathers slots when loading a save from before slots existed', () => {
+    const sim = Sim.create({ name: 'Test Air', code: 'TA', hq: 'LHR', livery: LIVERY, difficulty: 'standard', seed: 51 });
+    sim.player.cash += 1e9;
+    const route = openRoute(sim, 0, 'LHR', 'AMS');
+    if (!route.ok) throw new Error('setup failed');
+    buySlots(sim, 0, 'AMS', 6);
+    acquireAircraft(sim, 0, 'a20n', { lease: true });
+    expect(setRotation(sim, sim.fleetOf(0)[0].id, [route.value.id]).ok).toBe(true);
+    const used = slotsUsed(sim, sim.player, 'AMS');
+    expect(used).toBeGreaterThan(3);
+
+    // An old save knows nothing of slots.
+    const old = JSON.parse(sim.serialize());
+    delete old.airlines[0].slots;
+    for (const key of Object.keys(old.flags)) if (key.startsWith('slots:')) delete old.flags[key];
+    const loaded = Sim.load(JSON.stringify(old));
+    expect(slotsHeld(loaded.player, 'LHR')).toBeGreaterThanOrEqual(homeSlots(loaded.airport('LHR')));
+    expect(slotsHeld(loaded.player, 'AMS')).toBeGreaterThanOrEqual(Math.floor(used));
+    // What was flying can keep flying: putting the same rotation back is not refused.
+    const ac = loaded.fleetOf(0)[0];
+    expect(setRotation(loaded, ac.id, [...ac.rotation]).ok).toBe(true);
+  });
+
   it('keeps rivals within their slots', () => {
     const sim = Sim.create({ name: 'Test Air', code: 'TA', hq: 'MAN', livery: LIVERY, difficulty: 'standard', seed: 41 });
     for (let d = 0; d < 120; d++) sim.advance(1440);

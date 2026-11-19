@@ -9,6 +9,7 @@ import type { Difficulty, Livery, RegionId } from '../../sim/types';
 import { integer, money } from '../app/format';
 import { newGame, setState } from '../app/store';
 import { Emblem, Logo, Seg } from '../components/ui';
+import { homeSlots } from '../../sim/slots';
 import { AircraftPreview } from '../components/AircraftPreview';
 
 const PRIMARY = ['#2563eb', '#0ea5e9', '#14b8a6', '#16a34a', '#eab308', '#f97316', '#dc2626', '#db2777', '#7c3aed', '#0f172a', '#7f1d1d', '#065f46'];
@@ -179,13 +180,16 @@ export function NewGame() {
                 <dt>Local market</dt><dd>{airport.pax.toFixed(1)}M passengers a year</dd>
                 <dt>Longest runway</dt><dd>{integer(airport.runway)} m{airport.elev > 1200 ? ` at ${integer(airport.elev)} m elevation` : ''}</dd>
                 <dt>Rivals based here</dt><dd>{rivals.length ? rivals.map((r) => r.name).join(', ') : 'None'}</dd>
+                {airport.slotLimited && <><dt>Slots</dt><dd>You start with {homeSlots(airport)} departures a day</dd></>}
               </dl>
               <div className="small muted">
                 Strongest markets: {markets.map((m) => `${m.airport.id} (${integer(m.demand)}/day)`).join(' · ')}
               </div>
               <div className="tiny dim">
-                {airport.tier >= 4
-                  ? 'A big market with plenty of demand — and established competitors, high fees and scarce slots.'
+                {airport.slotLimited
+                  ? 'One of the world\'s most congested airports: firm fares and a big market, but every departure needs a slot, and more of them cost dearly. A demanding place to start.'
+                  : airport.tier >= 4
+                  ? 'A big market with plenty of demand, and established competitors and high fees to match.'
                   : airport.tier >= 3
                     ? 'A solid mid-size market: room to grow without fighting the giants on day one.'
                     : 'A small market. Thin routes suit turboprops and regional jets; growth will take patience.'}

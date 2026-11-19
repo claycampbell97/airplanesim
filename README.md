@@ -177,6 +177,7 @@ resolution when a GPU cannot keep up.
 npm test                 # simulation, demand and balance tests
 npm run typecheck
 REPORT=1 npm run balance # how a simple bot player fares, and what each home base offers
+DIAG=1 npx vitest run tests/diag.test.ts --disable-console-intercept   # modelled vs realised loads
 ```
 
 Useful addresses in development:

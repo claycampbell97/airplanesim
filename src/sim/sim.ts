@@ -17,7 +17,7 @@ import {
 import type { Market, Offer } from './market';
 import { checkObjectives, initialObjectives } from './objectives';
 import { faresManaged, manageFares, tuneFares } from './pricing';
-import { grantSlots, homeSlots } from './slots';
+import { grantSlots, homeSlots, slotsUsed } from './slots';
 import { stepAircraft } from './ops';
 import { emptyStats } from './actions';
 import { dayIndex, formatMonth, monthIndex } from './time';
@@ -127,6 +127,7 @@ export class Sim {
       today: emptyLedger(), month: emptyLedger(), history: [], daily: [],
       totalPax: 0, totalFlights: 0, bankrupt: false, insolventDays: 0,
       nextFlightNo: 101, nextReg: 1, founded: 0,
+      autoFares: true, slots: {},
     };
     grantSlots(player, opts.hq, homeSlots(AIRPORT[opts.hq]));
     // Begin at breakfast time at the home base, so the first view of it is in daylight.
@@ -174,7 +175,24 @@ export class Sim {
     const game = JSON.parse(json) as Game;
     if (!game || typeof game !== 'object' || !Array.isArray(game.airlines)) throw new Error('Not a save file');
     if (game.version !== SAVE_VERSION) throw new Error(`Save file is from an incompatible version (${game.version})`);
-    return new Sim(game);
+    const sim = new Sim(game);
+    sim.adopt();
+    return sim;
+  }
+
+  /** Brings a save from before slots existed up to date: what was already flying keeps its slots. */
+  private adopt(): void {
+    const p = this.player;
+    if (p.slots) return;
+    p.slots = {};
+    for (const ap of AIRPORTS) {
+      if (!ap.slotLimited) continue;
+      const held = Math.max(ap.id === p.hq ? homeSlots(ap) : 0, Math.ceil(slotsUsed(this, p, ap.id) - 0.05));
+      if (held > 0) {
+        p.slots[ap.id] = held;
+        this.game.flags[`slots:${ap.id}`] = 1;
+      }
+    }
   }
 
   // ───────────── Lookups ─────────────

@@ -51,7 +51,11 @@ export function Planner() {
   const canLease = leaseCommitment(sim, p) + lease * count <= leaseCapacity(sim, p) && p.cash >= lease * count + setup;
   // Slot-limited airports at either end, and whether the plan fits in the slots held there.
   const slotEnds = to && forecast ? [plan.from, to].filter((id) => AIRPORT[id].slotLimited) : [];
-  const short = to && forecast && !existing ? planShortfall(sim, p, plan.from, to, forecast.estimate.freq, true) : [];
+  // (An aircraft that already flies other routes splits its day: it needs no more slots at its own base.)
+  const sharing = !!aircraft && aircraft.rotation.length > 0;
+  const short = to && forecast && !existing
+    ? planShortfall(sim, p, plan.from, to, forecast.estimate.freq, true).filter((s) => !(sharing && s.airport === plan.from))
+    : [];
   const blocked = short.length > 0;
 
   const launch = (mode: 'only' | 'assign' | 'idle' | 'lease') => {
