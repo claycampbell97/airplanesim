@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { GlobeRenderer } from '../render/GlobeRenderer';
-import { applySettings, bindGlobe, cancelPlan, game, getState, openPanel, refreshSaves, setPaused, setSpeed, setState, startLoop, togglePanel, togglePause, useApp } from './app/store';
+import { applySettings, bindGlobe, cancelPlan, game, getState, openPanel, refreshSaves, setChase, setPaused, setSpeed, setState, startLoop, togglePanel, togglePause, useApp } from './app/store';
 import type { PanelId } from './app/store';
 import { useKey } from './components/ui';
 import { Hud } from './hud/Hud';
@@ -63,7 +63,7 @@ export function App() {
     if (e.key === 'Escape') {
       if (s.modal && s.modal.kind !== 'gameover' && s.modal.kind !== 'decision') setState({ modal: null });
       else if (s.plan) cancelPlan();
-      else if (s.chase !== null) setState({ chase: null });
+      else if (s.chase !== null) setChase(null);
       else if (s.airportId || s.flightId) {
         setState({ airportId: null, flightId: null });
         game.globe?.setSelection({ airport: null, aircraft: null });

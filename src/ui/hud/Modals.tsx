@@ -1,6 +1,6 @@
 // Dialogs: decisions, confirmations, aircraft orders, help and the end of the game.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { acquireAircraft, deliveryDays, newLease, newPrice } from '../../sim/actions';
 import { AIRCRAFT_TYPE, CLASS_NAMES, makeCabin, presetsFor, defaultPreset, totalSeats, typeName } from '../../sim/data/aircraft';
 import { AIRPORT } from '../../sim/data/airports';
@@ -33,6 +33,10 @@ function Shell({ title, children, footer, wide, onDismiss }: {
 function DecisionModal({ id }: { id: number }) {
   const sim = useSim();
   const d = sim.game.decisions.find((x) => x.id === id);
+  // The decision lapsed (or was settled elsewhere) while the dialog was open.
+  useEffect(() => {
+    if (!d) close();
+  }, [d]);
   if (!d) return null;
   return (
     <Shell title={d.title}>

@@ -6,7 +6,7 @@ import { createRival, reviewRival, seedRival } from './ai';
 import { AIRLINE_TEMPLATES } from './data/airlines';
 import { AIRCRAFT_TYPE, typeName } from './data/aircraft';
 import { AIRPORT, AIRPORTS } from './data/airports';
-import { resolveDecision as resolve, spawnDecisions } from './decisions';
+import { lapseDecisions, resolveDecision as resolve, spawnDecisions } from './decisions';
 import {
   chargeFixedCosts, closeMonth, emptyLedger, ledgerProfit, ledgerRevenue, overdraftLimit, serviceLoans,
 } from './finance';
@@ -332,6 +332,7 @@ export class Sim {
 
     stepWorld(this);
     refreshWorldFactors(this);
+    lapseDecisions(this);
     lap('world');
 
     for (const al of g.airlines) {

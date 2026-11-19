@@ -11,7 +11,7 @@ import { ledgerProfit } from '../../sim/finance';
 import { formatClock, formatDateLong } from '../../sim/time';
 import { compact, money, percent, signedMoney } from '../app/format';
 import {
-  applySettings, dismissToast, game, inspectAirport, openPanel, setPaused, setSpeed, SPEED_LABELS, togglePanel, useApp, useSim,
+  applySettings, dismissToast, game, inspectAirport, openPanel, setChase, setPaused, setSpeed, SPEED_LABELS, togglePanel, useApp, useSim,
 } from '../app/store';
 import type { PanelId } from '../app/store';
 import { cx, Logo } from '../components/ui';
@@ -47,6 +47,7 @@ function TopBar() {
   const sim = useSim();
   const paused = useApp((s) => s.paused);
   const speed = useApp((s) => s.speed);
+  const cruising = useApp((s) => s.chase !== null && s.cruise);
   const p = sim.player;
   const g = sim.game;
   const week = p.daily.slice(-7);
@@ -105,7 +106,7 @@ function TopBar() {
           {paused ? <Play /> : <Pause />}
         </button>
         {[1, 2, 3, 4].map((s) => (
-          <button key={s} aria-pressed={!paused && speed === s} onClick={() => setSpeed(s)} title={`Speed ${SPEED_LABELS[s]} (${s})`}>{SPEED_LABELS[s]}</button>
+          <button key={s} aria-pressed={!paused && !cruising && speed === s} onClick={() => setSpeed(s)} title={`Speed ${SPEED_LABELS[s]} (${s})`}>{SPEED_LABELS[s]}</button>
         ))}
       </div>
     </header>
@@ -245,13 +246,22 @@ function HoverTip() {
 
 export function Hud() {
   const plan = useApp((s) => s.plan);
+  const chase = useApp((s) => s.chase);
+  const cruise = useApp((s) => s.cruise);
   return (
     <div className="hud">
       <TopBar />
-      {!plan && <Dock />}
-      {!plan && <OpenPanel />}
+      {!plan && chase === null && <Dock />}
+      {!plan && chase === null && <OpenPanel />}
       {plan ? <Planner /> : <Inspector />}
-      <HoverTip />
+      {chase !== null && (
+        <div className="glass chase-hint">
+          <span className="muted">Flight view · drag to look around · scroll to move closer</span>
+          {cruise && <span className="badge" title="The clock runs slowly while you ride along. Pick a speed to hurry it up.">Clock slowed · <span className="mono">1–4</span> to speed up</span>}
+          <button className="btn sm" onClick={() => setChase(null)}><X />Leave <span className="dim mono">Esc</span></button>
+        </div>
+      )}
+      {chase === null && <HoverTip />}
       <Toasts />
       <Ticker />
       <Modals />

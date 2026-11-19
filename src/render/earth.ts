@@ -54,6 +54,7 @@ uniform vec3 sunDir;
 uniform vec2 texel;
 uniform float cloudShift;
 uniform float detail;
+uniform float closeUp;
 uniform float cloudShadows;
 varying vec3 vPos;
 varying vec2 vUv;
@@ -85,6 +86,13 @@ void main() {
     grain = fbm(N * 260.0) * 0.6 + fbm(N * 900.0) * 0.4 - 0.5;
     albedo *= 1.0 + grain * detail * mix(0.18, 0.55, land);
     Nb = normalize(Nb + (vnoise(N * 700.0) - 0.5) * detail * 0.22 * land * east + (vnoise(N * 700.0 + 9.7) - 0.5) * detail * 0.22 * land * north);
+  }
+  // Seen from just above the clouds the imagery is far past its resolution: lay a
+  // finer, field-and-forest sized grain over it.
+  if (closeUp > 0.001) {
+    float fine = fbm(N * 2600.0) * 0.55 + fbm(N * 9000.0) * 0.45 - 0.5;
+    albedo *= 1.0 + fine * closeUp * mix(0.1, 0.7, land);
+    Nb = normalize(Nb + (vnoise(N * 5200.0) - 0.5) * closeUp * 0.18 * land * east + (vnoise(N * 5200.0 + 3.1) - 0.5) * closeUp * 0.18 * land * north);
   }
 
   // Open water is darker and less saturated than the map suggests.
@@ -138,6 +146,7 @@ uniform vec3 sunDir;
 uniform vec2 texel;
 uniform float cloudShift;
 uniform float detail;
+uniform float closeUp;
 uniform float opacity;
 varying vec3 vPos;
 varying vec2 vUv;
@@ -156,7 +165,16 @@ void main() {
     float n = fbm(N * 340.0 + vec3(cloudShift * 40.0)) - 0.5;
     c = clamp(c + n * detail * 0.55 * smoothstep(0.03, 0.4, c), 0.0, 1.0);
   }
-  float alpha = smoothstep(0.1, 0.72, c);
+  float lo = 0.1;
+  float hi = 0.72;
+  if (closeUp > 0.001) {
+    // Up close, give the deck billowing edges and a firmer outline.
+    float n2 = fbm(N * 1700.0 + vec3(cloudShift * 90.0)) * 0.6 + fbm(N * 5200.0) * 0.4 - 0.5;
+    c = clamp(c + n2 * closeUp * 0.7 * smoothstep(0.02, 0.45, c), 0.0, 1.0);
+    lo = mix(0.1, 0.24, closeUp);
+    hi = mix(0.72, 0.5, closeUp);
+  }
+  float alpha = smoothstep(lo, hi, c);
   if (alpha < 0.003) discard;
 
   // Fake volume: treat density as height and shade its slope.
@@ -277,6 +295,7 @@ export class Earth {
   private cloudMat: THREE.ShaderMaterial;
   private atmoMat: THREE.ShaderMaterial;
   private cloudShift = 0;
+  private closeUp = 0;
 
   constructor(tex: EarthTextures, opts: EarthOptions) {
     const image = tex.aux.image as { width?: number; height?: number } | undefined;
@@ -292,6 +311,7 @@ export class Earth {
         texel: { value: texel },
         cloudShift: { value: 0 },
         detail: { value: 0 },
+        closeUp: { value: 0 },
         cloudShadows: { value: 1 },
       },
       vertexShader: SPHERE_VERT,
@@ -308,6 +328,7 @@ export class Earth {
         texel: { value: texel },
         cloudShift: { value: 0 },
         detail: { value: 0 },
+        closeUp: { value: 0 },
         opacity: { value: 1 },
       },
       vertexShader: SPHERE_VERT,
@@ -353,8 +374,17 @@ export class Earth {
     (this.surfaceMat.uniforms.sunDir.value as THREE.Vector3).copy(dir);
   }
 
-  /** `altitude` is the camera's height above the surface in Earth radii. */
-  update(dtSeconds: number, altitude: number): void {
+  /**
+   * `altitude` is the camera's height above the surface in Earth radii. `closeUp`
+   * (0..1) is 1 when the camera skims the cloud tops in the flight view.
+   */
+  update(dtSeconds: number, altitude: number, closeUp = 0): void {
+    const k = 1 - Math.exp(-dtSeconds * 3);
+    this.closeUp += (closeUp - this.closeUp) * k;
+    this.surfaceMat.uniforms.closeUp.value = this.closeUp;
+    this.cloudMat.uniforms.closeUp.value = this.closeUp;
+    // A deeper sky around the aircraft than the thin limb seen from orbit.
+    this.atmoMat.uniforms.intensity.value = 5.5 + 5.5 * this.closeUp;
     // Weather drifts slowly eastwards.
     this.cloudShift = (this.cloudShift + dtSeconds * 0.00022) % 1;
     const detail = THREE.MathUtils.smoothstep(1.4 - altitude, 0, 1.25);

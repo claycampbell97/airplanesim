@@ -36,6 +36,13 @@ export class GlobeCamera {
   /** Tilt towards the horizon when zoomed in. */
   tiltEnabled = true;
   enabled = true;
+  /**
+   * In free mode the owner positions the camera itself (e.g. to follow an aircraft);
+   * drags and zooms are reported through the callbacks below instead of moving the globe.
+   */
+  free = false;
+  onFreeDrag: ((dx: number, dy: number) => void) | null = null;
+  onFreeZoom: ((factor: number) => void) | null = null;
   onClick: ((x: number, y: number, event: PointerEvent) => void) | null = null;
   onHover: ((x: number, y: number) => void) | null = null;
   onUserMove: (() => void) | null = null;
@@ -104,13 +111,20 @@ export class GlobeCamera {
       if (this.pointers.size === 2) {
         const [a, b] = [...this.pointers.values()];
         const d = Math.hypot(a.x - b.x, a.y - b.y);
-        if (this.pinchDist > 0 && d > 0) this.zoomBy(this.pinchDist / d);
+        if (this.pinchDist > 0 && d > 0) {
+          if (this.free) this.onFreeZoom?.(this.pinchDist / d);
+          else this.zoomBy(this.pinchDist / d);
+        }
         this.pinchDist = d;
         return;
       }
 
       if (!this.dragMoved && Math.hypot(e.clientX - this.dragStart.x, e.clientY - this.dragStart.y) < 5) return;
       this.dragMoved = true;
+      if (this.free) {
+        this.onFreeDrag?.(dx, dy);
+        return;
+      }
       this.fly = null;
       this.onUserMove?.();
       const k = this.radiansPerPixel() / DEG;
@@ -148,11 +162,13 @@ export class GlobeCamera {
       if (!this.enabled) return;
       e.preventDefault();
       const delta = e.deltaMode === 1 ? e.deltaY * 30 : e.deltaY;
-      this.zoomBy(Math.exp(THREE.MathUtils.clamp(delta, -300, 300) * 0.0012));
+      const factor = Math.exp(THREE.MathUtils.clamp(delta, -300, 300) * 0.0012);
+      if (this.free) this.onFreeZoom?.(factor);
+      else this.zoomBy(factor);
     }, { passive: false });
 
     this.listen('dblclick', (e) => {
-      if (!this.enabled) return;
+      if (!this.enabled || this.free) return;
       const rect = this.el.getBoundingClientRect();
       const hit = this.pickGlobe(e.clientX - rect.left, e.clientY - rect.top);
       if (hit) this.flyTo({ lat: hit.lat, lon: hit.lon, altitude: Math.max(MIN_ALTITUDE, this.target.altitude * 0.5) }, 0.7);
@@ -198,6 +214,7 @@ export class GlobeCamera {
   }
 
   update(dt: number): void {
+    if (this.free) return;
     if (this.fly) {
       const f = this.fly;
       f.t = Math.min(1, f.t + dt / f.duration);

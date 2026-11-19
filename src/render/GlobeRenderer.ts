@@ -12,6 +12,7 @@ import type { Aircraft, AirportId, Route } from '../sim/types';
 import { arcPoint } from './arcs';
 import { gmstDegrees, sunDirection } from './astro';
 import { GlobeCamera } from './camera';
+import { ChaseView } from './chase';
 import { Earth } from './earth';
 import { LabelLayer } from './labels';
 import type { LabelSpec } from './labels';
@@ -107,6 +108,9 @@ export class GlobeRenderer {
 
   onPick: ((hit: GlobeHit | null, event: PointerEvent) => void) | null = null;
   onHover: ((hit: GlobeHit | null) => void) | null = null;
+  /** Called when the flight view ends by itself because the aircraft landed. */
+  onChaseEnd: ((aircraftId: number) => void) | null = null;
+  private chase: ChaseView | null = null;
 
   private sim: Sim | null = null;
   private labels: LabelLayer | null = null;
@@ -136,6 +140,7 @@ export class GlobeRenderer {
   private hover: GlobeHit | null = null;
   private frameCount = 0;
   private time = 0;
+  private skyFade = 0;
 
   constructor(canvas: HTMLCanvasElement, quality: Quality, labelRoot?: HTMLElement) {
     this.canvas = canvas;
@@ -161,6 +166,8 @@ export class GlobeRenderer {
     this.controls.onUserMove = () => {
       this.following = null;
     };
+    this.controls.onFreeDrag = (dx, dy) => this.chase?.orbit(dx, dy);
+    this.controls.onFreeZoom = (factor) => this.chase?.zoom(factor);
   }
 
   /** Loads textures and builds the scene. `onProgress` receives 0..1. */
@@ -193,6 +200,8 @@ export class GlobeRenderer {
     const target = new THREE.WebGLRenderTarget(this.width, this.height, { type: THREE.HalfFloatType, samples: q.msaa });
     this.composer = new EffectComposer(this.renderer, target);
     this.composer.addPass(new RenderPass(this.scene, this.controls.camera));
+    this.chase ??= new ChaseView(this.renderer);
+    this.composer.addPass(this.chase.pass);
     this.bloom = new UnrealBloomPass(new THREE.Vector2(this.width, this.height), 0.34, 0.55, 1.0);
     this.bloom.enabled = q.bloom;
     this.composer.addPass(this.bloom);
@@ -211,6 +220,7 @@ export class GlobeRenderer {
     this.composer?.setPixelRatio(this.pixelRatio);
     this.composer?.setSize(w, h);
     this.controls.resize(w, h);
+    this.chase?.resize(w / h);
     this.routes.setResolution(w, h);
   }
 
@@ -231,6 +241,7 @@ export class GlobeRenderer {
     this.routes.setHighlight(null, null);
     this.routes.setPreview(null, null);
     this.routes.setRange(null);
+    this.leaveChase();
     if (!sim) {
       this.routes.setPlayerRoutes([], () => this.accent);
       this.routes.setRivalRoutes([], () => this.accent);
@@ -312,6 +323,42 @@ export class GlobeRenderer {
 
   get followedAircraft(): number | null {
     return this.following;
+  }
+
+  /** Enters (or with null, leaves) the flight view alongside an airborne aircraft. */
+  setChase(id: number | null): void {
+    const chase = this.chase;
+    if (!chase || !this.sim) return;
+    if (id === chase.aircraftId) return;
+    const ac = id !== null ? this.sim.acById.get(id) : undefined;
+    if (ac && ac.phase === 'enroute') {
+      chase.begin(this.sim, ac);
+      this.controls.free = true;
+      this.traffic.hidden = ac.id;
+      this.following = null;
+    } else {
+      this.leaveChase();
+    }
+  }
+
+  get chasedAircraft(): number | null {
+    return this.chase?.aircraftId ?? null;
+  }
+
+  private leaveChase(): void {
+    const chase = this.chase;
+    if (!chase || !chase.active) return;
+    const id = chase.aircraftId!;
+    chase.end();
+    this.controls.free = false;
+    this.traffic.hidden = null;
+    const cam = this.controls.camera;
+    cam.fov = 35;
+    // Pick the globe view back up above wherever the aircraft was.
+    const ll = vecToLatLon([cam.position.x, cam.position.y, cam.position.z]);
+    this.controls.setPose({ lat: ll.lat, lon: ll.lon, altitude: 0.5 });
+    this.controls.flyTo({ altitude: 1.3 }, 1.6);
+    this.following = this.sim?.acById.has(id) ? id : null;
   }
 
   /** Screen position (CSS pixels) of an airport, or null if it is on the far side. */
@@ -532,11 +579,25 @@ export class GlobeRenderer {
     }
 
     this.controls.update(dt);
-    const altitude = this.controls.pose.altitude;
     this.updateSun(time, dt, fast);
+    const chase = this.chase;
+    if (chase?.active) {
+      if (!sim || !chase.update(sim, time, dt, this.sun, this.controls.camera)) {
+        const id = chase.aircraftId!;
+        this.leaveChase();
+        this.onChaseEnd?.(id);
+      }
+    }
+    const chasing = !!chase?.active;
+    // In the flight view the camera sits just above the clouds: treat it as fully zoomed in.
+    const altitude = chasing ? 0.2 : this.controls.pose.altitude;
     this.earth.setSun(this.sun);
-    this.earth.update(dt, this.controls.height);
+    this.earth.update(dt, this.controls.camera.position.length() - 1, chasing ? 1 : 0);
     this.sky.update(gmstDegrees(time), this.sun, this.controls.camera, this.pixelRatio);
+    // Inside the atmosphere the daytime sky drowns out the stars.
+    const daylight = chasing ? THREE.MathUtils.smoothstep(this.sun.dot(this.controls.camera.position) / this.controls.camera.position.length(), -0.1, 0.2) : 0;
+    this.skyFade += (daylight - this.skyFade) * (1 - Math.exp(-dt * 3));
+    this.sky.setBrightness(1 - 0.92 * this.skyFade);
 
     if (sim) {
       if (sim.revision !== this.lastRevision) {
@@ -548,15 +609,20 @@ export class GlobeRenderer {
     } else if (this.styleDirty) {
       this.rebuildStyle();
     }
-    this.traffic.group.visible = !!sim;
-    this.borders.update(altitude, this.layers.borders);
+    // The map overlays are drawn for the view from orbit; from the flight deck
+    // of a chase plane they would be poles and billboards in the sky.
+    this.traffic.group.visible = !!sim && !chasing;
+    this.routes.group.visible = !chasing;
+    this.airports.points.visible = !chasing;
+    this.borders.update(altitude, this.layers.borders, chasing ? 0.45 : 1);
     this.airports.update(
       { served: this.served, hubs: this.hubs, selected: this.planning?.to ?? this.selectedAirport, highlight: this.planning?.candidates ?? null, accent: this.accent },
       altitude,
       this.pixelRatio,
     );
     this.routes.update(dt);
-    if (this.frameCount % 2 === 0 || this.controls.isDragging) this.updateLabels();
+    if (chasing) this.labels?.update([], this.width, this.height, 0);
+    else if (this.frameCount % 2 === 0 || this.controls.isDragging) this.updateLabels();
 
     this.composer.render(dt);
   }
@@ -589,6 +655,7 @@ export class GlobeRenderer {
     this.sky?.dispose();
     this.routes.dispose();
     this.traffic.dispose();
+    this.chase?.dispose();
     this.labels?.clear();
     for (const t of this.textures) t.dispose();
     this.composer?.dispose();

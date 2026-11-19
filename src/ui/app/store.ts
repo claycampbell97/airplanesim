@@ -95,17 +95,21 @@ export interface AppState {
   saves: SaveMeta[];
   /** The camera is locked onto this aircraft in the cinematic flight view. */
   chase: number | null;
+  /** In the flight view the clock runs at a watchable pace until a speed is picked. */
+  cruise: boolean;
 }
 
 /** Game minutes per real second for each speed setting. */
 export const SPEEDS = [0, 20, 60, 200, 600];
 export const SPEED_LABELS = ['Paused', '1×', '3×', '10×', '30×'];
+/** Game minutes per real second while riding along in the flight view. */
+export const CRUISE_RATE = 2.5;
 
 let state: AppState = {
   screen: 'loading', progress: 0, error: null,
   panel: null, routeId: null, aircraftId: null, rivalId: null, airportId: null, flightId: null, plan: null,
   speed: 1, paused: true, tick: 0, toasts: [], modal: null,
-  settings: loadPrefs(DEFAULT_SETTINGS), hover: null, saves: [], chase: null,
+  settings: loadPrefs(DEFAULT_SETTINGS), hover: null, saves: [], chase: null, cruise: false,
 };
 
 const listeners = new Set<() => void>();
@@ -185,7 +189,13 @@ export function togglePause(): void {
 }
 
 export function setSpeed(speed: number): void {
-  setState({ speed: Math.max(1, Math.min(4, speed)), paused: false });
+  setState({ speed: Math.max(1, Math.min(4, speed)), paused: false, cruise: false });
+}
+
+/** Game minutes per real second right now. */
+export function currentRate(): number {
+  if (!game.sim || state.paused || state.screen !== 'game') return 0;
+  return state.chase !== null && state.cruise ? CRUISE_RATE : SPEEDS[state.speed];
 }
 
 let running = false;
@@ -203,7 +213,7 @@ export function startLoop(): void {
     const dt = Math.min(0.1, (now - lastFrame) / 1000);
     lastFrame = now;
     const { sim, globe } = game;
-    const rate = sim && !state.paused && state.screen === 'game' ? SPEEDS[state.speed] : 0;
+    const rate = currentRate();
     if (sim && rate > 0) sim.advance(dt * rate);
     if (globe) {
       // On the title screen time drifts gently so the terminator moves.
@@ -277,7 +287,7 @@ function enterGame(sim: Sim): void {
   const hq = AIRPORT[sim.player.hq];
   setState({
     screen: 'game', panel: sim.fleetOf(0).length === 0 ? 'overview' : null, paused: true, modal: null, plan: null,
-    routeId: null, aircraftId: null, rivalId: null, airportId: null, flightId: null, toasts: [], chase: null, tick: state.tick + 1,
+    routeId: null, aircraftId: null, rivalId: null, airportId: null, flightId: null, toasts: [], chase: null, cruise: false, tick: state.tick + 1,
   });
   const globe = game.globe;
   if (globe) {
@@ -351,7 +361,8 @@ export function quitToTitle(): void {
     game.globe.controls.autoRotate = 2.2;
     game.globe.controls.flyTo({ altitude: 3.4 }, 2);
   }
-  setState({ screen: 'title', panel: null, modal: null, plan: null, paused: true, airportId: null, flightId: null, chase: null });
+  game.globe?.setChase(null);
+  setState({ screen: 'title', panel: null, modal: null, plan: null, paused: true, airportId: null, flightId: null, chase: null, cruise: false });
   void listSaves().then((saves) => setState({ saves }));
 }
 
@@ -471,14 +482,31 @@ export function cancelPlan(): void {
 
 // ───────────── Globe events ─────────────
 
+/** Enters or leaves the cinematic flight view alongside an aircraft. */
+export function setChase(id: number | null): void {
+  const globe = game.globe;
+  if (!globe) return;
+  globe.setChase(id);
+  const active = globe.chasedAircraft;
+  setState({
+    chase: active, cruise: active !== null,
+    panel: active !== null ? null : state.panel, flightId: active ?? state.flightId, airportId: active !== null ? null : state.airportId,
+  });
+}
+
 export function bindGlobe(globe: GlobeRenderer): void {
   game.globe = globe;
+  globe.onChaseEnd = (id) => {
+    const ac = game.sim?.acById.get(id);
+    setState({ chase: null, cruise: false });
+    if (ac) toast('info', `${ac.reg} has landed at ${AIRPORT[ac.at].city}`, undefined, ac.at);
+  };
   globe.onHover = (hit) => {
     setState({ hover: hit });
     if (state.plan && !state.plan.to) syncPlan(state.plan);
   };
   globe.onPick = (hit) => {
-    if (state.screen !== 'game') return;
+    if (state.screen !== 'game' || state.chase !== null) return;
     if (state.plan) {
       if (hit?.kind === 'airport' && hit.id !== state.plan.from) updatePlan({ to: hit.id });
       else if (!hit) updatePlan({ to: null });
@@ -502,8 +530,8 @@ export function bindGlobe(globe: GlobeRenderer): void {
 if (import.meta.env.DEV || new URLSearchParams(location.search).has('debug')) {
   Object.assign(window as object, {
     __app: {
-      game, getState, setState, openPanel, setSpeed, setPaused, startPlan, showRoute, showAircraft, inspectAirport, inspectFlight,
-      sim: { actions, planner },
+      game, getState, setState, openPanel, setSpeed, setPaused, startPlan, showRoute, showAircraft, inspectAirport, inspectFlight, setChase,
+      sim: { actions, planner }, airports: AIRPORT,
     },
   });
 }

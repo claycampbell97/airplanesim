@@ -18,16 +18,21 @@ function push(sim: Sim, d: Omit<Decision, 'id' | 'expires'> & { days?: number })
 
 const money = (n: number) => (n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : `$${Math.round(n / 1000)}k`);
 
+/** Called once a day: unanswered decisions lapse, and the default is always the cautious option. */
+export function lapseDecisions(sim: Sim): void {
+  const g = sim.game;
+  for (const d of [...g.decisions]) {
+    if (g.time >= d.expires) resolveDecision(sim, d.id, d.options.length - 1, true);
+  }
+}
+
 /** Called once a month: maybe put a new decision in front of the player. */
 export function spawnDecisions(sim: Sim): void {
   const g = sim.game;
   const p = sim.player;
   const fleet = sim.fleetOf(0).length;
 
-  // Unanswered decisions lapse; the default is always the cautious option.
-  for (const d of [...g.decisions]) {
-    if (g.time >= d.expires) resolveDecision(sim, d.id, d.options.length - 1, true);
-  }
+  lapseDecisions(sim);
   if (fleet === 0) return;
 
   const last = p.history[p.history.length - 1];

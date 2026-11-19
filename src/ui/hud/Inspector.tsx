@@ -10,7 +10,7 @@ import { formatClock } from '../../sim/time';
 import type { Aircraft, Airport } from '../../sim/types';
 import { attempt, confirm, flightNumber } from '../app/act';
 import { duration, integer, km, money, percent, signedMoney, sum3 } from '../app/format';
-import { game, inspectAirport, inspectFlight, setState, showAircraft, showRoute, startPlan, useApp, useSim } from '../app/store';
+import { game, inspectAirport, inspectFlight, setChase, setState, showAircraft, showRoute, startPlan, useApp, useSim } from '../app/store';
 import { HBars } from '../components/charts';
 import { Logo, Meter } from '../components/ui';
 
@@ -161,7 +161,7 @@ function FlightCard({ ac }: { ac: Aircraft }) {
           </h2>
           <div className="sub ellipsis">{al.name} · {typeName(type)} <span className="mono">{ac.reg}</span></div>
         </div>
-        <button className="btn ghost icon" onClick={() => { inspectFlight(null); setState({ chase: null }); }} aria-label="Close"><X /></button>
+        <button className="btn ghost icon" onClick={() => { setChase(null); inspectFlight(null); }} aria-label="Close"><X /></button>
       </header>
       <div className="panel-body">
         {leg && ac.phase === 'enroute' ? (
@@ -197,7 +197,7 @@ function FlightCard({ ac }: { ac: Aircraft }) {
             <Crosshair />{following ? 'Stop tracking' : 'Track'}
           </button>
           {ac.phase === 'enroute' && (
-            <button className="btn" aria-pressed={chase === ac.id} onClick={() => setState({ chase: chase === ac.id ? null : ac.id })} title="Fly alongside this aircraft">
+            <button className={chase === ac.id ? 'btn' : 'btn primary'} aria-pressed={chase === ac.id} onClick={() => setChase(chase === ac.id ? null : ac.id)} title="Fly alongside this aircraft">
               <Video />{chase === ac.id ? 'Leave flight view' : 'Flight view'}
             </button>
           )}

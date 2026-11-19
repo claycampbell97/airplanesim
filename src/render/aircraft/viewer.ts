@@ -18,11 +18,21 @@ const DEG = Math.PI / 180;
 export function createStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
   const pmrem = new THREE.PMREMGenerator(renderer);
   const room = new RoomEnvironment();
-  const texture = pmrem.fromScene(room, 0.035).texture;
+  const target = pmrem.fromScene(room, 0.035);
   room.dispose();
   pmrem.dispose();
+  // The texture lives inside a render target; disposing the texture releases both.
+  const texture = target.texture;
+  const release = (): void => {
+    texture.removeEventListener('dispose', release);
+    target.dispose();
+  };
+  texture.addEventListener('dispose', release);
   return texture;
 }
+
+/** The viewer drawing into each canvas, so that a successor can take over its WebGL context. */
+const owners = new WeakMap<HTMLCanvasElement, AircraftViewer>();
 
 function radialTexture(stops: [number, string][]): THREE.CanvasTexture {
   const c = document.createElement('canvas');
@@ -74,6 +84,7 @@ export class AircraftViewer {
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    owners.set(canvas, this);
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
@@ -141,6 +152,7 @@ export class AircraftViewer {
       this.sinceInput = 0;
     });
     canvas.addEventListener('wheel', this.onWheel, { passive: true });
+    canvas.addEventListener('webglcontextrestored', this.onContextRestored);
 
     this.resize();
     this.setView(38, 12);
@@ -148,6 +160,17 @@ export class AircraftViewer {
 
   private onWheel = (): void => {
     this.sinceInput = 0;
+  };
+
+  /**
+   * three.js re-uploads its own resources after a lost context, but the baked
+   * reflections have to be rendered again. (The old texture died with the old
+   * context, so there is nothing left to release.)
+   */
+  private onContextRestored = (): void => {
+    if (this.disposed) return;
+    this.env = createStudioEnvironment(this.renderer);
+    this.scene.environment = this.env;
   };
 
   /** Swaps the displayed aircraft (rebuilds the model). */
@@ -311,7 +334,9 @@ export class AircraftViewer {
     if (this.disposed) return;
     this.stop();
     this.disposed = true;
-    this.canvas.removeEventListener('wheel', this.onWheel);
+    const { canvas, renderer } = this;
+    canvas.removeEventListener('wheel', this.onWheel);
+    canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
     this.controls.dispose();
     this.clearModel();
     for (const mesh of [this.floor, this.glow, this.rim]) {
@@ -321,8 +346,17 @@ export class AircraftViewer {
     for (const t of this.textures) t.dispose();
     this.key.shadow.map?.dispose();
     this.env.dispose();
-    this.renderer.dispose();
-    // Give the context back straight away; browsers only allow a handful at once.
-    this.renderer.forceContextLoss();
+    renderer.resetState();
+    renderer.dispose();
+    if (owners.get(canvas) === this) owners.delete(canvas);
+    // Give the WebGL context back, since browsers only allow a handful at once. A canvas
+    // that is still on the page gets a moment's grace: a viewer created on it straight
+    // away (an effect that re-runs, a hot reload) inherits the context instead of
+    // finding it dead.
+    const release = (): void => {
+      if (!owners.has(canvas) && !renderer.getContext().isContextLost()) renderer.forceContextLoss();
+    };
+    if (canvas.isConnected) queueMicrotask(release);
+    else release();
   }
 }

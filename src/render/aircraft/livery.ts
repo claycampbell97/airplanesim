@@ -391,7 +391,7 @@ export function paintFuselage(type: AircraftType, p: FuselageProfile, livery: Li
         let lo = alphaOf(a, sill);
         if (lo === null) continue;
         // The front edge slants back from the centre post; the rear edge leans forward.
-        const frontLimit = Math.PI / 2 - ((a - aFront) / 0.26) * (Math.PI / 2 - 0.5);
+        const frontLimit = 1.5 - ((a - aFront) / 0.14) * (1.5 - lo);
         lo = Math.max(lo, frontLimit);
         if (pane === 2) lo = Math.max(lo, alphaOf(a, sill + (head - sill) * 0.9 * smoothstep(aRear - 0.14, aRear + 0.02, a)) ?? lo);
         const hi = Math.min(alphaOf(a, head) ?? Math.PI / 2, Math.PI / 2 - 0.045);
@@ -625,6 +625,16 @@ export function paintFin(livery: Livery, f: FinPlanform, size: number): HTMLCanv
   }
   ctx.fill(emblemPath(livery.emblem));
   ctx.restore();
+
+  // Unpainted leading edge.
+  ctx.fillStyle = 'rgba(214,219,226,0.92)';
+  ctx.beginPath();
+  ctx.moveTo(X(le(0) + 0.05), Y(m.yMin));
+  ctx.lineTo(X(le(1) + 0.05), Y(m.yMax));
+  ctx.lineTo(X(le(1) - (le(1) - te(1)) * 0.035), Y(m.yMax));
+  ctx.lineTo(X(le(0) - (le(0) - te(0)) * 0.025), Y(m.yMin));
+  ctx.closePath();
+  ctx.fill();
 
   // Rudder hinge line.
   ctx.strokeStyle = luminance(pal.fin) > 0.4 ? 'rgba(30,38,52,0.4)' : 'rgba(240,244,250,0.3)';

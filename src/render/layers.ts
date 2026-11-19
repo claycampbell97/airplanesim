@@ -59,11 +59,11 @@ export class BorderLayer {
   }
 
   /** Lines fade in as the camera approaches, where the imagery gets soft. */
-  update(altitude: number, enabled: boolean): void {
+  update(altitude: number, enabled: boolean, gain = 1): void {
     if (!this.coast || !this.borders) return;
     const near = 1 - THREE.MathUtils.smoothstep(altitude, 0.5, 2.6);
-    (this.coast.material as THREE.LineBasicMaterial).opacity = enabled ? 0.1 + 0.3 * near : 0;
-    (this.borders.material as THREE.LineBasicMaterial).opacity = enabled ? 0.05 + 0.3 * near : 0;
+    (this.coast.material as THREE.LineBasicMaterial).opacity = enabled ? (0.1 + 0.3 * near) * gain : 0;
+    (this.borders.material as THREE.LineBasicMaterial).opacity = enabled ? (0.05 + 0.3 * near) * gain : 0;
     this.group.visible = enabled;
   }
 }
