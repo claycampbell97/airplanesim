@@ -1,6 +1,7 @@
 // Top-level component: owns the WebGL canvas and decides which screen sits on top of it.
 
 import { useEffect, useRef } from 'react';
+import { audio } from '../audio/audio';
 import { GlobeRenderer } from '../render/GlobeRenderer';
 import { applySettings, bindGlobe, cancelPlan, game, getState, openPanel, refreshSaves, setChase, setPaused, setSpeed, setState, startLoop, togglePanel, togglePause, useApp } from './app/store';
 import type { PanelId } from './app/store';
@@ -51,6 +52,17 @@ export function App() {
       cancelled = true;
       ro.disconnect();
     };
+  }, []);
+
+  // Every button, tab and tick box gets the same soft click.
+  useEffect(() => {
+    audio.arm();
+    const onClick = (e: MouseEvent) => {
+      const el = (e.target as HTMLElement | null)?.closest?.('button, [role="tab"], [role="button"], select, summary, input[type="checkbox"], input[type="radio"], a[href]');
+      if (el && !(el as HTMLButtonElement).disabled) audio.play('click');
+    };
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
   }, []);
 
   useKey((e) => {

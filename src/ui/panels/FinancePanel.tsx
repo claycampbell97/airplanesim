@@ -194,7 +194,7 @@ function Balance() {
             <div className="row between wrap">
               <Seg value={term} onChange={setTerm} title="Term" options={[{ value: 24, label: '2 years' }, { value: 60, label: '5 years' }, { value: 120, label: '10 years' }]} />
               <span className="small muted">{percent(rate, 1)} interest · {money(annuity(loanAmount, rate, term))} a month</span>
-              <button className="btn primary" onClick={() => { if (takeLoan(sim, p, loanAmount, term)) { refresh(); toast('good', `Borrowed ${money(loanAmount)}`); } }}>Take loan</button>
+              <button className="btn primary" onClick={() => { if (takeLoan(sim, p, loanAmount, term)) { refresh(); toast('good', `Borrowed ${money(loanAmount)}`, undefined, undefined, 'cash'); } }}>Take loan</button>
             </div>
           </>
         ) : <div className="small muted">The banks will not lend more for now. Owned aircraft and steady profits raise your limit.</div>}

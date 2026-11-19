@@ -45,12 +45,12 @@ export function Planner() {
 
   const launch = (mode: 'only' | 'assign' | 'idle' | 'lease') => {
     if (!to) return;
-    const route = attempt(openRoute(sim, 0, plan.from, to));
+    const route = attempt(openRoute(sim, 0, plan.from, to), undefined, 'launch');
     if (!route) return;
     if (mode === 'assign' && aircraft) {
-      attempt(setRotation(sim, aircraft.id, [...aircraft.rotation, route.id]));
+      attempt(setRotation(sim, aircraft.id, [...aircraft.rotation, route.id]), undefined, null);
     } else if (mode === 'idle') {
-      for (const ac of idle.slice(0, count)) attempt(setRotation(sim, ac.id, [route.id]));
+      for (const ac of idle.slice(0, count)) attempt(setRotation(sim, ac.id, [route.id]), undefined, null);
     } else if (mode === 'lease') {
       let done = 0;
       for (let i = 0; i < count; i++) {
@@ -60,7 +60,7 @@ export function Planner() {
         setRotation(sim, ac.id, [route.id]);
         done++;
       }
-      if (done) toast('good', `${done} × ${typeName(type)} leased for ${route.a}–${route.b}`, `Flying starts on delivery, ${formatDate(sim.game.time + deliveryDays(plan.type) * 1440)}.`);
+      if (done) toast('good', `${done} × ${typeName(type)} leased for ${route.a}–${route.b}`, `Flying starts on delivery, ${formatDate(sim.game.time + deliveryDays(plan.type) * 1440)}.`, undefined, null);
     }
     game.globe?.invalidate();
     refresh();

@@ -31,7 +31,7 @@ varying vec2 vUv;
 void main() {
   vUv = uv;
   float s = uv.y;
-  float w = uWidth * (0.7 + 11.0 * pow(s, 0.7));
+  float w = uWidth * (0.55 + 7.0 * pow(s, 0.85));
   vec3 p = vec3(position.x * w, 0.0, -uLength * s * s);
   gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
 }`;
@@ -55,15 +55,17 @@ float noise(vec2 p) {
 void main() {
   float s = vUv.y;
   float across = 1.0 - abs(vUv.x * 2.0 - 1.0);
-  float body = smoothstep(0.0, 0.85, across);
   float along = s * s;
   float puff = noise(vec2(vUv.x * 2.5, along * 420.0 + uTime * 2.2)) * 0.6 + noise(vec2(vUv.x * 6.0, along * 1500.0 + uTime * 5.0)) * 0.4;
-  float a = body * body * (0.45 + 0.85 * puff);
-  a *= smoothstep(0.0, 0.1, s) * (1.0 - smoothstep(0.3, 1.0, s));
+  // A dense core with a ragged edge that frays more as the trail ages.
+  float edge = mix(0.75, 0.35, s) + (puff - 0.5) * mix(0.25, 0.7, s);
+  float a = smoothstep(0.0, max(edge, 0.05), across) * (0.7 + 0.5 * puff);
+  a *= smoothstep(0.0, 0.07, s) * (1.0 - smoothstep(0.25, 1.0, s));
   gl_FragColor = vec4(uColor, clamp(a, 0.0, 1.0) * uOpacity);
 }`;
 
 const TRAIL_LENGTH = 14000;
+const WHITE = new THREE.Color(1, 1, 1);
 
 export class ChaseView {
   readonly scene = new THREE.Scene();
@@ -123,6 +125,16 @@ export class ChaseView {
     return this.aircraftId !== null;
   }
 
+  /** How close the camera sits to the aircraft: 0 at the far limit, 1 right alongside. */
+  get proximity(): number {
+    const near = this.length * 0.85;
+    const far = this.length * 12;
+    return 1 - Math.log(this.dist / near) / Math.log(far / near);
+  }
+
+  /** Jet engines (true) or propellers (false). */
+  jets = true;
+
   begin(sim: Sim, ac: Aircraft): void {
     this.end();
     const al = sim.game.airlines[ac.airline];
@@ -132,6 +144,7 @@ export class ChaseView {
     this.scene.add(this.model);
     this.length = (this.model.userData.length as number) ?? AIRCRAFT_TYPE[ac.type].shape.length;
     this.buildTrails(AIRCRAFT_TYPE[ac.type].shape);
+    this.jets = AIRCRAFT_TYPE[ac.type].shape.engineMount !== 'prop';
     this.dist = this.length * 2.3;
     this.az = 0.55;
     this.el = 0.2;
@@ -154,7 +167,7 @@ export class ChaseView {
       for (const side of [1, -1]) {
         for (const roll of [0, Math.PI / 2]) {
           const ribbon = new THREE.Mesh(this.trailGeometry, this.trailMaterial);
-          ribbon.position.set(side * x, y, -shape.length * 0.85);
+          ribbon.position.set(side * x, y, -shape.length * 0.62);
           ribbon.rotation.z = roll;
           ribbon.frustumCulled = false;
           ribbon.renderOrder = 2;
@@ -242,7 +255,7 @@ export class ChaseView {
     this.sunLocal.copy(sunWorld).applyQuaternion(this.inverse);
     const day = THREE.MathUtils.smoothstep(sunWorld.dot(this.p) / this.p.length(), -0.14, 0.16);
     this.sun.position.copy(this.sunLocal).multiplyScalar(1000);
-    this.sun.intensity = 2.3 * day;
+    this.sun.intensity = 2.0 * day;
     // Low sun turns warm.
     const low = 1 - THREE.MathUtils.smoothstep(this.sunLocal.y, 0.0, 0.35);
     this.sun.color.setRGB(1, 0.95 - 0.35 * low, 0.88 - 0.55 * low);
@@ -253,8 +266,9 @@ export class ChaseView {
 
     // Contrails only form in the cold air of the cruise.
     const u = this.trailMaterial.uniforms;
-    u.uOpacity.value = 0.62 * THREE.MathUtils.smoothstep(altitudeProfile(t, dist), 0.72, 0.98);
-    (u.uColor.value as THREE.Color).copy(this.sun.color).multiplyScalar(0.05 + 0.85 * day);
+    u.uOpacity.value = 0.8 * THREE.MathUtils.smoothstep(altitudeProfile(t, dist), 0.72, 0.98);
+    // Ice crystals are white: only a hint of the sun's colour, and nearly dark at night.
+    (u.uColor.value as THREE.Color).copy(this.sun.color).lerp(WHITE, 0.6).multiplyScalar(0.05 + 0.9 * day);
     u.uTime.value = this.clock;
 
     this.clock += dt;

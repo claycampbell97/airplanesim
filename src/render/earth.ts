@@ -89,11 +89,13 @@ void main() {
   }
   // Seen from just above the clouds the imagery is far past its resolution: lay a
   // finer, field-and-forest sized grain over it.
-  if (closeUp > 0.001) {
+#ifdef CLOSE_UP
+  {
     float fine = fbm(N * 2600.0) * 0.55 + fbm(N * 9000.0) * 0.45 - 0.5;
     albedo *= 1.0 + fine * closeUp * mix(0.1, 0.7, land);
     Nb = normalize(Nb + (vnoise(N * 5200.0) - 0.5) * closeUp * 0.18 * land * east + (vnoise(N * 5200.0 + 3.1) - 0.5) * closeUp * 0.18 * land * north);
   }
+#endif
 
   // Open water is darker and less saturated than the map suggests.
   vec3 water = albedo * vec3(0.42, 0.56, 0.62) + vec3(0.0015, 0.004, 0.009);
@@ -132,6 +134,19 @@ void main() {
   vec3 lights = texture2D(nightMap, vUv).rgb;
   float lum = max(max(lights.r, lights.g), lights.b);
   vec3 glow = lights * smoothstep(0.035, 0.22, lum) * vec3(1.0, 0.82, 0.6);
+#ifdef CLOSE_UP
+  {
+    // From cruising height a city is not a smudge of light but districts and
+    // streets: break the map up into them. Far away, where a street is smaller
+    // than a pixel, settle on the average instead of shimmering.
+    vec3 q = N * 26000.0;
+    float streets = smoothstep(0.2, 0.62, vnoise(q) * vnoise(q * 2.3 + 11.0) * 2.2);
+    float district = smoothstep(0.25, 0.8, fbm(N * 2400.0));
+    float fine = 1.0 - smoothstep(0.3, 1.1, length(fwidth(q)));
+    float pattern = (0.1 + 0.5 * district) + 2.6 * district * mix(0.3, streets, fine);
+    glow *= mix(1.0, 0.62 * pattern, closeUp);
+  }
+#endif
   color += glow * (1.0 - day) * (1.0 - 0.55 * cloudAbove) * 2.4;
   // A whisper of moonlight so the night side is not a black hole.
   color += albedo * vec3(0.012, 0.016, 0.028) * (1.0 - day);
@@ -167,13 +182,15 @@ void main() {
   }
   float lo = 0.1;
   float hi = 0.72;
-  if (closeUp > 0.001) {
+#ifdef CLOSE_UP
+  {
     // Up close, give the deck billowing edges and a firmer outline.
     float n2 = fbm(N * 1700.0 + vec3(cloudShift * 90.0)) * 0.6 + fbm(N * 5200.0) * 0.4 - 0.5;
     c = clamp(c + n2 * closeUp * 0.7 * smoothstep(0.02, 0.45, c), 0.0, 1.0);
     lo = mix(0.1, 0.24, closeUp);
     hi = mix(0.72, 0.5, closeUp);
   }
+#endif
   float alpha = smoothstep(lo, hi, c);
   if (alpha < 0.003) discard;
 
@@ -296,6 +313,7 @@ export class Earth {
   private atmoMat: THREE.ShaderMaterial;
   private cloudShift = 0;
   private closeUp = 0;
+  private closeUpCompiled = false;
 
   constructor(tex: EarthTextures, opts: EarthOptions) {
     const image = tex.aux.image as { width?: number; height?: number } | undefined;
@@ -383,6 +401,17 @@ export class Earth {
     this.closeUp += (closeUp - this.closeUp) * k;
     this.surfaceMat.uniforms.closeUp.value = this.closeUp;
     this.cloudMat.uniforms.closeUp.value = this.closeUp;
+    // The extra detail is compiled in only while it is needed, so the view from
+    // orbit never pays for it.
+    const detailed = closeUp > 0 || this.closeUp > 0.004;
+    if (detailed !== this.closeUpCompiled) {
+      this.closeUpCompiled = detailed;
+      for (const m of [this.surfaceMat, this.cloudMat]) {
+        if (detailed) m.defines = { ...m.defines, CLOSE_UP: '' };
+        else if (m.defines) delete m.defines.CLOSE_UP;
+        m.needsUpdate = true;
+      }
+    }
     // A deeper sky around the aircraft than the thin limb seen from orbit.
     this.atmoMat.uniforms.intensity.value = 5.5 + 5.5 * this.closeUp;
     // Weather drifts slowly eastwards.

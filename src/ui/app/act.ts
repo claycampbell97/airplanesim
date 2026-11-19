@@ -5,20 +5,23 @@ import { AIRCRAFT_TYPE, typeName } from '../../sim/data/aircraft';
 import { AIRPORT } from '../../sim/data/airports';
 import type { Aircraft, Airline, Route } from '../../sim/types';
 import type { Sim } from '../../sim/sim';
+import { audio } from '../../audio/audio';
+import type { Cue } from '../../audio/audio';
 import { game, refresh, setState, toast } from './store';
 
 /**
  * Unwraps the result of a game action: failures become an error toast, successes
  * refresh the interface and the map. Returns the value, or undefined on failure.
  */
-export function attempt<T>(result: Result<T>, okMessage?: string): T | undefined {
+export function attempt<T>(result: Result<T>, okMessage?: string, cue: Cue | null = 'confirm'): T | undefined {
   if (!result.ok) {
     toast('error', result.reason);
     return undefined;
   }
   game.globe?.invalidate();
   refresh();
-  if (okMessage) toast('info', okMessage);
+  if (cue) audio.play(cue);
+  if (okMessage) toast('info', okMessage, undefined, undefined, null);
   return result.value;
 }
 

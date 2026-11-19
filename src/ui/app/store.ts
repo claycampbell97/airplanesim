@@ -6,6 +6,8 @@
 // the clock runs and after every player action.
 
 import { useSyncExternalStore } from 'react';
+import { audio } from '../../audio/audio';
+import type { Cue } from '../../audio/audio';
 import type { GlobeHit, GlobeRenderer, Quality, SunMode } from '../../render/GlobeRenderer';
 import type { RouteColorMode } from '../../render/layers';
 import { AIRPORT, airportDistance } from '../../sim/data/airports';
@@ -151,7 +153,13 @@ export function refresh(): void {
 
 let toastId = 1;
 
-export function toast(kind: Toast['kind'], title: string, body?: string, airport?: AirportId): void {
+const TOAST_CUES: Partial<Record<Toast['kind'], Cue>> = {
+  error: 'error', good: 'good', bad: 'bad', milestone: 'milestone', rival: 'rival',
+};
+
+/** Shows a notification. `cue` overrides the sound that goes with it (null for silence). */
+export function toast(kind: Toast['kind'], title: string, body?: string, airport?: AirportId, cue?: Cue | null): void {
+  if (cue !== null) audio.play(cue ?? TOAST_CUES[kind] ?? 'notify');
   const t: Toast = { id: toastId++, kind, title, body, airport };
   setState({ toasts: [...state.toasts.slice(-3), t] });
   setTimeout(() => dismissToast(t.id), kind === 'error' ? 5000 : 7000);
@@ -167,6 +175,7 @@ export function applySettings(patch: Partial<Settings>): void {
   const settings = { ...state.settings, ...patch };
   setState({ settings });
   savePrefs(settings);
+  audio.configure(settings.sound, settings.volume);
   const globe = game.globe;
   if (!globe) return;
   globe.sunMode = settings.sun;
@@ -219,6 +228,12 @@ export function startLoop(): void {
       // On the title screen time drifts gently so the terminator moves.
       const time = sim ? sim.renderTime : titleTime(dt);
       globe.frame(dt, time, rate >= 200);
+      if (globe.chasedAircraft !== null) {
+        audio.setScene('flight');
+        audio.setFlight(globe.chaseProximity, globe.chaseJets);
+      } else {
+        audio.setScene(state.screen === 'loading' ? 'silent' : 'globe');
+      }
     }
     if (sim && now - lastTick > (rate > 0 ? 220 : 1000)) {
       lastTick = now;
@@ -250,6 +265,7 @@ function bindSim(sim: Sim): void {
     }),
     sim.on('decision', (d: { id: number }) => {
       setState({ modal: { kind: 'decision', id: d.id } });
+      audio.play('notify');
       if (state.settings.pauseOnDecision) setPaused(true);
     }),
     sim.on('month', () => {
@@ -259,6 +275,7 @@ function bindSim(sim: Sim): void {
     sim.on('objective', (_o: Objective) => refresh()),
     sim.on('gameover', () => {
       setState({ modal: { kind: 'gameover' }, paused: true });
+      audio.play('bad');
     }),
   ];
   document.documentElement.style.setProperty('--accent', accentFor(sim.player.livery.primary));
@@ -300,6 +317,7 @@ function enterGame(sim: Sim): void {
 export function newGame(opts: NewGameOptions): void {
   try {
     enterGame(Sim.create(opts));
+    audio.play('launch');
   } catch (e) {
     toast('error', 'Could not start the game', String((e as Error).message ?? e));
   }
@@ -373,6 +391,7 @@ export async function refreshSaves(): Promise<void> {
 // ───────────── Panels and selection ─────────────
 
 export function openPanel(panel: PanelId | null): void {
+  if (panel !== state.panel) audio.play(panel ? 'open' : 'close');
   setState({ panel, routeId: null, aircraftId: null, rivalId: null });
 }
 
@@ -486,8 +505,10 @@ export function cancelPlan(): void {
 export function setChase(id: number | null): void {
   const globe = game.globe;
   if (!globe) return;
+  const before = globe.chasedAircraft;
   globe.setChase(id);
   const active = globe.chasedAircraft;
+  if (active !== before) audio.play('whoosh');
   setState({
     chase: active, cruise: active !== null,
     panel: active !== null ? null : state.panel, flightId: active ?? state.flightId, airportId: active !== null ? null : state.airportId,
@@ -531,6 +552,7 @@ if (import.meta.env.DEV || new URLSearchParams(location.search).has('debug')) {
   Object.assign(window as object, {
     __app: {
       game, getState, setState, openPanel, setSpeed, setPaused, startPlan, showRoute, showAircraft, inspectAirport, inspectFlight, setChase,
+      saveGame, loadGame, quitToTitle, audio,
       sim: { actions, planner }, airports: AIRPORT,
     },
   });

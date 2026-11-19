@@ -106,7 +106,7 @@ function AcquireModal({ modal }: { modal: Extract<Modal, { kind: 'acquire' }> })
     if (done > 0) {
       game.globe?.invalidate();
       refresh();
-      toast('good', `${done > 1 ? `${done} × ` : ''}${typeName(type)} ${lease ? 'leased' : 'ordered'}`, `Delivery to ${base} on ${formatDate(sim.game.time + days * 1440)}.`);
+      toast('good', `${done > 1 ? `${done} × ` : ''}${typeName(type)} ${lease ? 'leased' : 'ordered'}`, `Delivery to ${base} on ${formatDate(sim.game.time + days * 1440)}.`, undefined, 'cash');
       setState({ modal: null, panel: 'fleet' });
     }
   };

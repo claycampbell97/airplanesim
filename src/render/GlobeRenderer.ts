@@ -40,6 +40,9 @@ export const QUALITY: Record<Quality, QualityPreset> = {
   ultra: { pixelRatio: 2.5, textures: '4k', viewSteps: 16, lightSteps: 5, bloom: true, segments: 256, stars: 10000, msaa: 4 },
 };
 
+/** The automatic resolution scaling never goes below this fraction of the chosen quality. */
+const MIN_SCALE = 0.45;
+
 export type SunMode = 'real' | 'studio';
 
 export type GlobeHit =
@@ -142,6 +145,15 @@ export class GlobeRenderer {
   private time = 0;
   private skyFade = 0;
 
+  /** Lower the render resolution automatically when frames take too long. */
+  adaptive = true;
+  private scale = 1;
+  private frameMs = 16;
+  private slowFor = 0;
+  private smoothFor = 0;
+  private sinceSharpen = 60;
+  private retryAfter = 10;
+
   constructor(canvas: HTMLCanvasElement, quality: Quality, labelRoot?: HTMLElement) {
     this.canvas = canvas;
     this.quality = quality;
@@ -212,7 +224,7 @@ export class GlobeRenderer {
   resize(): void {
     const w = Math.max(1, this.canvas.clientWidth);
     const h = Math.max(1, this.canvas.clientHeight);
-    this.pixelRatio = Math.min(window.devicePixelRatio || 1, QUALITY[this.quality].pixelRatio);
+    this.pixelRatio = Math.min(window.devicePixelRatio || 1, QUALITY[this.quality].pixelRatio) * this.scale;
     this.width = w;
     this.height = h;
     this.renderer.setPixelRatio(this.pixelRatio);
@@ -222,6 +234,43 @@ export class GlobeRenderer {
     this.controls.resize(w, h);
     this.chase?.resize(w / h);
     this.routes.setResolution(w, h);
+  }
+
+  /**
+   * Dynamic resolution: on a GPU that cannot keep up, a slightly softer image
+   * beats a slide show. Sharpness is given back, cautiously, when there is room.
+   */
+  private adapt(dt: number): void {
+    if (!this.adaptive || document.hidden) return;
+    this.frameMs += (dt * 1000 - this.frameMs) * 0.1;
+    this.sinceSharpen += dt;
+    if (this.frameMs > 27) {
+      this.slowFor += dt;
+      this.smoothFor = 0;
+    } else {
+      this.slowFor = 0;
+      this.smoothFor = this.frameMs < 19 ? this.smoothFor + dt : 0;
+    }
+    let next = this.scale;
+    if (this.slowFor > 1.5 && this.scale > MIN_SCALE) {
+      next = Math.max(MIN_SCALE, this.scale * 0.8);
+      // The last attempt to sharpen did not hold: wait longer before the next one.
+      if (this.sinceSharpen < 6) this.retryAfter = Math.min(300, this.retryAfter * 2);
+    } else if (this.smoothFor > this.retryAfter && this.scale < 1) {
+      next = Math.min(1, this.scale * 1.25);
+      this.sinceSharpen = 0;
+    }
+    if (next === this.scale) return;
+    this.scale = next;
+    this.slowFor = 0;
+    this.smoothFor = 0;
+    this.frameMs = 20;
+    this.resize();
+  }
+
+  /** The automatic resolution scale currently in force (1 = full quality). */
+  get renderScale(): number {
+    return this.scale;
   }
 
   get viewport(): { width: number; height: number; pixelRatio: number } {
@@ -343,6 +392,15 @@ export class GlobeRenderer {
 
   get chasedAircraft(): number | null {
     return this.chase?.aircraftId ?? null;
+  }
+
+  /** In the flight view: how close the camera is to the aircraft (0..1), for the sound. */
+  get chaseProximity(): number {
+    return this.chase?.proximity ?? 0;
+  }
+
+  get chaseJets(): boolean {
+    return this.chase?.jets ?? true;
   }
 
   private leaveChase(): void {
@@ -562,6 +620,7 @@ export class GlobeRenderer {
     const sim = this.sim;
     this.time = time;
     this.frameCount++;
+    this.adapt(dt);
 
     if (sim && this.following !== null) {
       const ac = sim.acById.get(this.following);
@@ -614,7 +673,7 @@ export class GlobeRenderer {
     this.traffic.group.visible = !!sim && !chasing;
     this.routes.group.visible = !chasing;
     this.airports.points.visible = !chasing;
-    this.borders.update(altitude, this.layers.borders, chasing ? 0.45 : 1);
+    this.borders.update(altitude, this.layers.borders, chasing ? 0.1 + 0.26 * daylight : 1);
     this.airports.update(
       { served: this.served, hubs: this.hubs, selected: this.planning?.to ?? this.selectedAirport, highlight: this.planning?.candidates ?? null, accent: this.accent },
       altitude,
@@ -643,6 +702,9 @@ export class GlobeRenderer {
   setQuality(quality: Quality): void {
     // Texture tier changes need a reload; everything else applies in place.
     this.quality = quality;
+    // A deliberate choice of quality starts again from full resolution.
+    this.scale = 1;
+    this.retryAfter = 10;
     const q = QUALITY[quality];
     this.earth?.setAtmosphereQuality(q.viewSteps, q.lightSteps);
     if (this.bloom) this.bloom.enabled = q.bloom;
