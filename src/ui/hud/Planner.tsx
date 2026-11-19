@@ -8,6 +8,7 @@ import { AIRPORT } from '../../sim/data/airports';
 import { leaseCapacity, leaseCommitment } from '../../sim/finance';
 import { OTHER_AIRLINES } from '../../sim/market';
 import { planRoute, suggestRoutes } from '../../sim/planner';
+import { buySlots, planShortfall, slotsCost, slotsFreeFor, slotsToBuy } from '../../sim/slots';
 import { formatDate } from '../../sim/time';
 import { deliveryDaysFor } from '../../sim/actions';
 import { attempt } from '../app/act';
@@ -42,9 +43,17 @@ export function Planner() {
   const idle = sim.fleetOf(0).filter((a) => a.type === plan.type && a.base === plan.from && a.rotation.length === 0);
   const lease = newLease(sim, plan.type, p);
   const canLease = leaseCommitment(sim, p) + lease * count <= leaseCapacity(sim, p) && p.cash >= lease * count + setup;
+  // Slot-limited airports at either end, and whether the plan fits in the slots held there.
+  const slotEnds = to && forecast ? [plan.from, to].filter((id) => AIRPORT[id].slotLimited) : [];
+  const short = to && forecast && !existing ? planShortfall(sim, p, plan.from, to, forecast.estimate.freq, true) : [];
+  const blocked = short.length > 0;
 
   const launch = (mode: 'only' | 'assign' | 'idle' | 'lease') => {
     if (!to) return;
+    if (mode !== 'only' && blocked) {
+      toast('error', `Not enough slots at ${AIRPORT[short[0].airport].city}`, 'Buy the slots first, or open the route and add aircraft later.');
+      return;
+    }
     const route = attempt(openRoute(sim, 0, plan.from, to), undefined, 'launch');
     if (!route) return;
     if (mode === 'assign' && aircraft) {
@@ -58,7 +67,8 @@ export function Planner() {
         const res = acquireAircraft(sim, 0, plan.type, { lease: true, base: plan.from });
         if (!res.ok) { toast('error', res.reason); break; }
         const ac = sim.fleetOf(0)[sim.fleetOf(0).length - 1];
-        setRotation(sim, ac.id, [route.id]);
+        const assigned = setRotation(sim, ac.id, [route.id]);
+        if (!assigned.ok) toast('error', assigned.reason);
         done++;
       }
       if (done) toast('good', `${done} × ${typeName(type)} leased for ${route.a}–${route.b}`, `Flying starts on delivery, ${formatDate(sim.game.time + days * 1440)}.`, undefined, null);
@@ -136,7 +146,26 @@ export function Planner() {
                   <dt>Passengers per flight</dt><dd>{integer(sum3(forecast.estimate.pax))} of {sum3(forecast.cabin)} seats</dd>
                   {sum3(forecast.estimate.conn) >= 1 && <><dt>…of which connecting</dt><dd>{integer(sum3(forecast.estimate.conn))}</dd></>}
                   <dt>Economy fare</dt><dd>${forecast.price[0]}</dd>
+                  {slotEnds.map((id) => (
+                    <div key={id} style={{ display: 'contents' }}>
+                      <dt>Slots at {id}</dt>
+                      <dd>{forecast.estimate.freq.toFixed(1)} needed · {Math.max(0, slotsFreeFor(sim, p, id, true)).toFixed(1)} free</dd>
+                    </div>
+                  ))}
                 </dl>
+                {short.map((s) => {
+                  const n = slotsToBuy(s);
+                  const cost = slotsCost(sim, p, s.airport, n);
+                  return (
+                    <div key={s.airport} className="card tight col gap-6">
+                      <div className="small warn">{AIRPORT[s.airport].city} is full: you need {n} more slot{n === 1 ? '' : 's'} there to fly this, or a plan with fewer, larger aircraft.</div>
+                      <button className="btn sm" disabled={p.cash < cost} title={p.cash < cost ? 'Not enough cash' : undefined}
+                        onClick={() => attempt(buySlots(sim, 0, s.airport, n), `${n} slot${n === 1 ? '' : 's'} bought at ${s.airport}`, 'cash')}>
+                        <Plus />Buy {n} slot{n === 1 ? '' : 's'} at {s.airport} · {money(cost)}
+                      </button>
+                    </div>
+                  );
+                })}
                 <div className="section-title">Per flight</div>
                 <dl className="kv small">
                   <dt>Revenue</dt><dd>{money(forecast.flight.revenue)}</dd>
@@ -168,14 +197,14 @@ export function Planner() {
             <footer className="panel-foot" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
               <div className="row between small"><span className="muted">Set-up cost</span><span className="num strong">{money(setup)}</span></div>
               {aircraft ? (
-                <button className="btn primary block" onClick={() => launch('assign')}><Check />Open and assign {aircraft.reg}</button>
+                <button className="btn primary block" disabled={blocked} title={blocked ? 'Not enough slots' : undefined} onClick={() => launch('assign')}><Check />Open and assign {aircraft.reg}</button>
               ) : (
                 <>
                   {idle.length > 0 && (
-                    <button className="btn primary block" onClick={() => launch('idle')}><Check />Open and assign {idle.length >= count && count >= 1 ? (count > 1 ? `${count} idle aircraft` : idle[0].reg) : idle[0].reg}</button>
+                    <button className="btn primary block" disabled={blocked} title={blocked ? 'Not enough slots' : undefined} onClick={() => launch('idle')}><Check />Open and assign {idle.length >= count && count >= 1 ? (count > 1 ? `${count} idle aircraft` : idle[0].reg) : idle[0].reg}</button>
                   )}
-                  <button className={cx('btn block', idle.length === 0 && 'primary')} disabled={!canLease || count < 1} onClick={() => launch('lease')}
-                    title={canLease ? undefined : 'Not enough cash or lease credit'}>
+                  <button className={cx('btn block', idle.length === 0 && 'primary')} disabled={!canLease || count < 1 || blocked} onClick={() => launch('lease')}
+                    title={blocked ? 'Not enough slots' : canLease ? undefined : 'Not enough cash or lease credit'}>
                     <Plus />Open and lease {count >= 1 ? count : 1} new · {money(lease * Math.max(1, count))}/mo
                   </button>
                   <button className="btn ghost block" onClick={() => launch('only')}>Open the route only</button>

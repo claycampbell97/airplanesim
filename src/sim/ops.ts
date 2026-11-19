@@ -4,7 +4,7 @@ import { AIRCRAFT_TYPE, totalSeats } from './data/aircraft';
 import { AIRPORT, airportDistance } from './data/airports';
 import { BOOKING_SWING } from './demand';
 import { earn, feeFactor, fuelPriceFor, hubDiscount, labourFactor, ownershipPerDay, spend } from './finance';
-import { aircraftAgeYears, blockMinutes, getMarket, NIGHT_STOP_BLOCK, settlePools } from './market';
+import { aircraftAgeYears, blockMinutes, getMarket, legsPerDay, maxBlockMinutes, NIGHT_STOP_BLOCK, settlePools } from './market';
 import { chance, rand, randRange } from './rng';
 import type { Aircraft, AircraftType, Airline, AirportId, Route, Triple } from './types';
 import type { Sim } from './sim';
@@ -230,13 +230,28 @@ function dispatch(sim: Sim, ac: Aircraft, t: number): void {
 
   // Pick the next route in the rotation that is still valid.
   const n = ac.rotation.length;
+  const before = ac.rotIndex;
   for (let i = 0; i < n; i++) {
     ac.rotIndex = (ac.rotIndex + 1) % n;
     const r = sim.routeById.get(ac.rotation[ac.rotIndex]);
     if (!r) continue;
     const dest = r.a === ac.base ? r.b : r.b === ac.base ? r.a : null;
     if (dest) {
-      fly(sim, ac, r, dest, t);
+      // Daily flying hours: the out-and-back has to fit in the time the aircraft has in hand.
+      const cap = maxBlockMinutes(ac.type);
+      const perMinute = cap / 1440;
+      const inHand = Math.min(cap, (ac.duty ?? cap) + (t - (ac.dutyTime ?? t)) * perMinute);
+      const need = 2 * blockMinutes(ac.type, r.dist);
+      const enough = Math.min(need, cap);
+      ac.duty = inHand;
+      ac.dutyTime = t;
+      if (inHand < enough - 0.5) {
+        ac.rotIndex = before;
+        ac.note = 'Crew rest and daily checks';
+        ac.next = t + Math.ceil((enough - inHand) / perMinute);
+        return;
+      }
+      if (fly(sim, ac, r, dest, t)) ac.duty = inHand - need;
       return;
     }
   }
@@ -263,7 +278,8 @@ export function localHour(lon: number, t: number): number {
   return (((t / 60 + lon / 15) % 24) + 24) % 24;
 }
 
-function fly(sim: Sim, ac: Aircraft, route: Route, to: AirportId, t: number): void {
+/** Sends an aircraft off on a flight. Returns false if it could not leave yet (night stop, strike, closure, fault). */
+function fly(sim: Sim, ac: Aircraft, route: Route, to: AirportId, t: number): boolean {
   const g = sim.game;
   const al = g.airlines[ac.airline];
   const from = ac.at;
@@ -277,7 +293,7 @@ function fly(sim: Sim, ac: Aircraft, route: Route, to: AirportId, t: number): vo
       const wait = ((5.25 - h + 24) % 24) * 60 + rand(g) * 70;
       ac.note = 'Night stop';
       ac.next = t + wait;
-      return;
+      return false;
     }
   }
   const age = aircraftAgeYears(sim, ac);
@@ -289,7 +305,7 @@ function fly(sim: Sim, ac: Aircraft, route: Route, to: AirportId, t: number): vo
     ac.next = t + 240;
     al.today.cancelled += 1;
     al.month.cancelled += 1;
-    return;
+    return false;
   }
 
   // Closed airports hold everything on the ground.
@@ -299,7 +315,7 @@ function fly(sim: Sim, ac: Aircraft, route: Route, to: AirportId, t: number): vo
     ac.next = t + 180;
     al.today.cancelled += 1;
     al.month.cancelled += 1;
-    return;
+    return false;
   }
 
   // Technical fault before departure: the aircraft is stuck until it is fixed.
@@ -316,7 +332,7 @@ function fly(sim: Sim, ac: Aircraft, route: Route, to: AirportId, t: number): vo
     al.month.cancelled += 1;
     al.otp = al.otp * 0.985;
     sim.onGrounded(ac, repair);
-    return;
+    return false;
   }
 
   // Boarding: take waiting passengers from the booking pools.
@@ -376,9 +392,10 @@ function fly(sim: Sim, ac: Aircraft, route: Route, to: AirportId, t: number): vo
 
   const block = blockMinutes(ac.type, route.dist);
   const revenue = tickets + ancillary + cargo;
-  // Route profitability also carries the aircraft's ownership cost for the time it is tied up.
-  const cycle = block + AIRCRAFT_TYPE[ac.type].turnaround;
-  const ownership = ownershipPerDay(ac) * (cycle / 1440);
+  // Route profitability also carries the aircraft's ownership cost: a day of it spread
+  // over the flights the aircraft makes in a day, idle hours included.
+  const legs = legsPerDay(sim, ac);
+  const ownership = legs > 0 ? ownershipPerDay(ac) / legs : 0;
   const cost = costs.total + compensation + ownership;
 
   const seats = totalSeats(ac.cabin);
@@ -410,6 +427,7 @@ function fly(sim: Sim, ac: Aircraft, route: Route, to: AirportId, t: number): vo
   ac.note = '';
   ac.next = t + delay + block;
   if (delay > 180) sim.onLongDelay(ac, delay);
+  return true;
 }
 
 // ───────────────────────── Planning ─────────────────────────

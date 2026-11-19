@@ -117,7 +117,7 @@ YXY 0.4 0
 YFB 0.15 .05
 
 # ───────────── Mexico, Central America, Caribbean ─────────────
-MEX 50.3 .20 B
+MEX 50.3 .20 BS
 CUN 32.7 .02 TW
 GDL 17.7 .05
 MTY 13.3 .05 B
@@ -155,7 +155,7 @@ FDF 1.9 0 TW
 
 # ───────────── South America ─────────────
 GRU 43.0 .30 B
-CGH 22.3 .10 B
+CGH 22.3 .10 BS
 SDU 9.0 .05 B
 GIG 14.0 .10 t
 BSB 16.7 .35
@@ -206,10 +206,10 @@ CAY 0.5 0
 
 # ───────────── United Kingdom & Ireland ─────────────
 LHR 80.9 .25 BS
-LGW 46.6 .05 t
+LGW 46.6 .05 tS
 STN 28.1 0
 LTN 18.0 0
-LCY 5.1 0 B
+LCY 5.1 0 BS
 MAN 29.4 .03
 EDI 14.7 .02
 GLA 9.7 .02
@@ -235,14 +235,14 @@ BOD 7.7 0
 NTE 7.2 0
 BSL 9.1 0
 AJA 1.6 0 T
-AMS 71.7 .37 B
+AMS 71.7 .37 BS
 EIN 6.7 0
 BRU 26.4 .15 B
 CRL 8.2 0
 LUX 4.4 0 B
 
 # ───────────── Germany, Switzerland, Austria ─────────────
-FRA 70.6 .50 B
+FRA 70.6 .50 BS
 MUC 47.9 .38 B
 BER 23.0 .03
 DUS 25.5 .05 B
@@ -432,7 +432,7 @@ DYU 1.5 0
 ASB 1.0 0
 KBL 1.0 0
 DEL 73.0 .20 B
-BOM 52.0 .10 B
+BOM 52.0 .10 BS
 BLR 38.0 .05 B
 HYD 25.0 .05
 MAA 21.0 .05
@@ -469,9 +469,9 @@ LHE 5.2 0
 ISB 4.8 0
 
 # ───────────── China, Hong Kong, Macau, Taiwan, Mongolia ─────────────
-PEK 53.0 .20 B
+PEK 53.0 .20 BS
 PKX 39.0 .10
-PVG 54.0 .15 B
+PVG 54.0 .15 BS
 SHA 42.0 .05 B
 CAN 63.0 .10
 SZX 52.9 .05 B
@@ -515,7 +515,7 @@ WNZ 10.0 0
 NGB 12.0 0
 JHG 5.0 0 T
 KHG 2.5 0
-HKG 53.0 .30 B
+HKG 53.0 .30 BS
 MFM 9.6 0 T
 TPE 45.0 .15 B
 TSA 6.0 0 B
@@ -524,7 +524,7 @@ RMQ 2.0 0
 UBN 2.0 0
 
 # ───────────── Japan, Korea ─────────────
-HND 79.0 .10 B
+HND 79.0 .10 BS
 NRT 39.0 .20
 KIX 30.0 .05 t
 ITM 16.5 0
@@ -596,7 +596,7 @@ BWN 2.0 0
 DIL 0.3 0
 
 # ───────────── Oceania ─────────────
-SYD 42.0 .05 B
+SYD 42.0 .05 BS
 MEL 35.0 .05 B
 BNE 23.0 .05
 PER 16.0 .03

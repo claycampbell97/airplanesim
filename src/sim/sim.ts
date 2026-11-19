@@ -16,6 +16,7 @@ import {
 import type { Market, Offer } from './market';
 import { checkObjectives, initialObjectives } from './objectives';
 import { manageFares } from './pricing';
+import { grantSlots, homeSlots } from './slots';
 import { stepAircraft } from './ops';
 import { emptyStats } from './actions';
 import { dayIndex, formatMonth, monthIndex } from './time';
@@ -124,6 +125,7 @@ export class Sim {
       totalPax: 0, totalFlights: 0, bankrupt: false, insolventDays: 0,
       nextFlightNo: 101, nextReg: 1, founded: 0,
     };
+    grantSlots(player, opts.hq, homeSlots(AIRPORT[opts.hq]));
     // Begin at breakfast time at the home base, so the first view of it is in daylight.
     const startMinute = Math.round(((((7 - AIRPORT[opts.hq].lon / 15) % 24) + 24) % 24) * 60);
     const game: Game = {

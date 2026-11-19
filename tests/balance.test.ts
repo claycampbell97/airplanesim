@@ -4,6 +4,7 @@ import { AIRCRAFT_TYPE } from '../src/sim/data/aircraft';
 import { getMarket } from '../src/sim/market';
 import { equity, ledgerCost, ledgerProfit, ledgerRevenue, leaseCapacity, leaseCommitment, valuation } from '../src/sim/finance';
 import { suggestRoutes } from '../src/sim/planner';
+import { buySlots, planShortfall, slotsCost, slotsToBuy } from '../src/sim/slots';
 import { Sim } from '../src/sim/sim';
 import type { Difficulty, Livery } from '../src/sim/types';
 
@@ -32,6 +33,14 @@ function runBot(hq: string, difficulty: Difficulty, types: string[], months: num
         if (plans.length && plans[0].profitPerDay > 0 && (!best || plans[0].profitPerDay > best.plan.profitPerDay)) best = { type, plan: plans[0] };
       }
       if (!best) break;
+      // At a slot-limited airport, buy the slots the plan needs (if that is affordable).
+      const short = planShortfall(sim, p, best.plan.a, best.plan.b, best.plan.estimate.freq, true);
+      let stuck = false;
+      for (const sf of short) {
+        const n = slotsToBuy(sf);
+        if (slotsCost(sim, p, sf.airport, n) > p.cash * 0.2 || !buySlots(sim, 0, sf.airport, n).ok) stuck = true;
+      }
+      if (stuck) break;
       const route = openRoute(sim, 0, best.plan.a, best.plan.b);
       if (!route.ok) break;
       forecasts.set(route.value.id, { lf: best.plan.estimate.loadFactor, profit: best.plan.profitPerDay * 30 });

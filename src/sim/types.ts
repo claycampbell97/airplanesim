@@ -246,6 +246,8 @@ export interface Airline {
   founded: number;
   /** New routes have their fares managed automatically (the player's preference; on unless set to false). */
   autoFares?: boolean;
+  /** Daily departure slots held at slot-limited airports (the player; rivals' holdings follow from their standing). */
+  slots?: Record<AirportId, number>;
 }
 
 export interface RouteStats {
@@ -354,6 +356,13 @@ export interface Aircraft {
   note: string;
   /** Rival bookkeeping: number of thin routes this aircraft is meant to share its day between. */
   partTime?: number;
+  /**
+   * Flying time in hand, in minutes gate to gate, as of `dutyTime`. It builds up at
+   * the type's daily limit per day (to at most one day's worth) and each round trip
+   * spends it, which is what holds utilisation to realistic hours.
+   */
+  duty?: number;
+  dutyTime?: number;
 }
 
 export interface Order {

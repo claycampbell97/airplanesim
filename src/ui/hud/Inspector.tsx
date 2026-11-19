@@ -6,6 +6,7 @@ import { AIRCRAFT_TYPE, CLASS_NAMES, totalSeats, typeName } from '../../sim/data
 import { AIRPORT, airportDistance, TIER_NAMES } from '../../sim/data/airports';
 import { baseDemand, topMarkets } from '../../sim/demand';
 import { feeFactor, HUB_LEVEL_NAMES, hubMonthlyFee, hubSetupCost } from '../../sim/finance';
+import { buySlots, sellSlot, slotPrice, slotRefund, slotsHeld, slotsUsed } from '../../sim/slots';
 import { formatClock } from '../../sim/time';
 import type { Aircraft, AircraftCategory, Airport } from '../../sim/types';
 import { altitudeProfile } from '../../render/arcs';
@@ -24,6 +25,8 @@ function AirportCard({ airport }: { airport: Airport }) {
   const nextLevel = ((hub?.level ?? 0) + 1) as 1 | 2 | 3;
   const cost = nextLevel <= 3 ? hubSetupCost(airport, nextLevel) * sim.tuning.cost : 0;
   const defaultType = sim.fleetOf(0)[0]?.type ?? 'a20n';
+  const slotsHere = airport.slotLimited ? slotsHeld(p, airport.id) : 0;
+  const slotsInUse = airport.slotLimited ? slotsUsed(sim, p, airport.id) : 0;
 
   // Who else is here.
   const carriers = new Map<number, number>();
@@ -85,6 +88,28 @@ function AirportCard({ airport }: { airport: Airport }) {
             </>
           )}
         </div>
+
+        {airport.slotLimited && (
+          <div className="card tight col gap-6">
+            <div className="row between small">
+              <span className="muted">Your slots here</span>
+              <span className="num"><b className="strong" style={{ color: 'var(--text)' }}>{slotsInUse.toFixed(1)}</b> of {slotsHere} in use</span>
+            </div>
+            <Meter value={slotsHere > 0 ? slotsInUse / slotsHere : 0} />
+            <div className="row wrap">
+              <button className="btn sm" disabled={p.cash < slotPrice(sim, p, airport.id)}
+                onClick={() => attempt(buySlots(sim, 0, airport.id, 1), `Slot bought at ${airport.id}`, 'cash')}>
+                <Plus />Buy a slot · {money(slotPrice(sim, p, airport.id))}
+              </button>
+              {slotsHere - slotsInUse >= 1 && (
+                <button className="btn ghost sm" onClick={() => attempt(sellSlot(sim, 0, airport.id), `Slot sold at ${airport.id}`, 'cash')}>
+                  Sell one · {money(slotRefund(sim, p, airport.id))}
+                </button>
+              )}
+            </div>
+            <div className="tiny dim">A slot is one departure a day. This airport is full, so fares are firm, and a larger aircraft carries more per slot.</div>
+          </div>
+        )}
 
         {!hub && p.hubs.length > 0 && (
           <div className="col gap-4 small">

@@ -12,7 +12,7 @@ import { AIRCRAFT_TYPE } from './data/aircraft';
 import { AIRPORT, AIRPORTS, airportDistance, pairIndex } from './data/airports';
 import { baseDemand, classSplit, expectedBoarded, frequencyCapture, leisureScore, businessScore, priceResponse, refFare, REGION_GROWTH, seasonOf } from './demand';
 import { yearFraction, yearsElapsed } from './time';
-import type { Aircraft, Airline, AirportId, RegionId, Route, Triple } from './types';
+import type { Aircraft, AircraftCategory, Airline, AirportId, RegionId, Route, Triple } from './types';
 import type { Sim } from './sim';
 
 export interface Market {
@@ -51,6 +51,8 @@ export interface Offer {
 
 /** Share of each class's demand that the unsimulated incumbent carriers have seats for. */
 const OTHERS_CAPACITY: Triple = [0.85, 0.85, 0.8];
+/** At a slot-limited airport the incumbents can only field this share of the seats they would like to. */
+const SLOT_SCARCITY = 0.78;
 /** Typical aircraft size used by the incumbents, to turn seats into frequency. */
 const OTHERS_SEATS = 165;
 const OTHERS_QUALITY = 0.45;
@@ -124,14 +126,16 @@ function applyTimeFactor(sim: Sim, m: Market): void {
   m.demand[1] = m.base[1] * f;
   m.demand[2] = m.base[2] * f;
 
-  // Incumbents scale their schedules with the market.
+  // Incumbents scale their schedules with the market: except where an airport has no
+  // slots left to give, and they cannot keep up with demand.
   const o = m.others;
-  const daily = m.demand[0] * OTHERS_CAPACITY[0] + m.demand[1] * OTHERS_CAPACITY[1] + m.demand[2] * OTHERS_CAPACITY[2];
+  const scarce = (AIRPORT[m.a].slotLimited ? SLOT_SCARCITY : 1) * (AIRPORT[m.b].slotLimited ? SLOT_SCARCITY : 1);
+  const daily = (m.demand[0] * OTHERS_CAPACITY[0] + m.demand[1] * OTHERS_CAPACITY[1] + m.demand[2] * OTHERS_CAPACITY[2]) * scarce;
   // Thin markets are poorly served or not at all: this is where newcomers find room.
   const presence = Math.max(0, Math.min(1, (daily - 60) / 140));
   o.freq = Math.min(16, (daily / OTHERS_SEATS) * presence);
   for (let c = 0; c < 3; c++) {
-    o.seats[c] = o.freq > 0 ? (m.demand[c] * OTHERS_CAPACITY[c] * presence) / o.freq : 0;
+    o.seats[c] = o.freq > 0 ? (m.demand[c] * OTHERS_CAPACITY[c] * scarce * presence) / o.freq : 0;
     o.price[c] = m.ref[c];
   }
 }
@@ -183,27 +187,52 @@ export const NIGHT_STOP_BLOCK = 300;
 /** Share of the day in which short flights may depart. */
 const DAY_WINDOW = 18.25 / 24;
 
-/** Round trips per day one aircraft can fly on a route, allowing for night stops and maintenance. */
+/**
+ * The most an aircraft flies in a day, in hours gate to gate. Crews run out of duty
+ * time, schedules have to meet the hours people want to travel, and the aircraft
+ * needs its daily checks: nobody gets twenty hours a day out of an airliner.
+ */
+export const MAX_BLOCK_HOURS: Record<AircraftCategory, number> = {
+  turboprop: 10, regional: 11, narrowbody: 12.5, widebody: 15.5, jumbo: 15,
+};
+
+export function maxBlockMinutes(typeId: string): number {
+  return MAX_BLOCK_HOURS[AIRCRAFT_TYPE[typeId].category] * 60;
+}
+
+/** Round trips per day one aircraft can fly on a route, allowing for night stops, daily hours and maintenance. */
 export function dailyRoundTrips(typeId: string, dist: number): number {
-  const window = blockMinutes(typeId, dist) < NIGHT_STOP_BLOCK ? DAY_WINDOW : 1;
-  return (1440 / roundTripMinutes(typeId, dist)) * window * AVAILABILITY;
+  const block = blockMinutes(typeId, dist);
+  const window = block < NIGHT_STOP_BLOCK ? DAY_WINDOW : 1;
+  const natural = (1440 / roundTripMinutes(typeId, dist)) * window;
+  return Math.min(natural, maxBlockMinutes(typeId) / (2 * block)) * AVAILABILITY;
 }
 
 /** Daily departures per direction that an aircraft contributes to each route in its rotation. */
 export function rotationFrequency(sim: Sim, ac: Aircraft, rotation: number[] = ac.rotation): number {
   let cycle = 0;
   let night = 0;
+  let block = 0;
   for (const rid of rotation) {
     const r = sim.routeById.get(rid);
     if (!r) continue;
     const rt = roundTripMinutes(ac.type, r.dist);
+    const b = blockMinutes(ac.type, r.dist);
     cycle += rt;
-    if (blockMinutes(ac.type, r.dist) < NIGHT_STOP_BLOCK) night += rt;
+    block += 2 * b;
+    if (b < NIGHT_STOP_BLOCK) night += rt;
   }
   if (cycle <= 0) return 0;
   // Night stops only cost time on the short sectors of a rotation.
   const window = 1 - (1 - DAY_WINDOW) * (night / cycle);
-  return (1440 / cycle) * window * AVAILABILITY;
+  return Math.min((1440 / cycle) * window, maxBlockMinutes(ac.type) / block) * AVAILABILITY;
+}
+
+/** Flights (in either direction) an aircraft makes per day across its whole rotation. */
+export function legsPerDay(sim: Sim, ac: Aircraft): number {
+  let routes = 0;
+  for (const rid of ac.rotation) if (sim.routeById.has(rid)) routes += 1;
+  return 2 * routes * rotationFrequency(sim, ac);
 }
 
 export function aircraftAgeYears(sim: Sim, ac: Aircraft): number {

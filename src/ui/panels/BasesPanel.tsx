@@ -11,6 +11,7 @@ import type { RegionId } from '../../sim/types';
 import { attempt, confirm } from '../app/act';
 import { integer, money } from '../app/format';
 import { inspectAirport, openPanel, startPlan, useSim } from '../app/store';
+import { slotsHeld, slotsUsed } from '../../sim/slots';
 import { Panel } from '../components/ui';
 
 const LEVEL_BLURB = ['', 'Station aircraft and start routes here.', 'Passengers connect between your flights; cheaper airport charges.', 'The strongest pull for connecting passengers and the lowest charges.'];
@@ -51,6 +52,9 @@ export function BasesPanel() {
                 <button className="btn ghost icon" title="Show on the globe" aria-label={`Show ${ap.id} on the globe`} onClick={() => inspectAirport(ap.id, true)}><LocateFixed /></button>
               </div>
               <div className="small muted">{LEVEL_BLURB[h.level]}</div>
+              {ap.slotLimited && (
+                <div className="small"><span className="badge warn">Slot-constrained</span> <span className="muted">{slotsUsed(sim, p, ap.id).toFixed(1)} of {slotsHeld(p, ap.id)} slots in use. Buy more on the airport's card.</span></div>
+              )}
               <div className="row wrap">
                 <button className="btn sm" onClick={() => startPlan(ap.id, defaultType)}><Plus />Plan a route</button>
                 {h.level < 3 && (

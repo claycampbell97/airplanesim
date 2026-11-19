@@ -53,7 +53,7 @@ export function spend(al: Airline, key: CostKey, amount: number): void {
 
 /** Local price level of an airport: landing, handling and terminal fees scale with it. */
 export function feeFactor(ap: Airport): number {
-  return (0.55 + 0.21 * ap.tier) * (ap.slotLimited ? 1.5 : 1) * Math.pow(ap.wealth, 0.6);
+  return (0.55 + 0.21 * ap.tier) * (ap.slotLimited ? 1.3 : 1) * Math.pow(ap.wealth, 0.6);
 }
 
 /** Wage level of an airline: pay policy × cost of living at its headquarters. */

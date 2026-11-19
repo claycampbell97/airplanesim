@@ -8,7 +8,8 @@ import type { AirlineTemplate } from './data/airlines';
 import { AIRPORT, AIRPORTS, airportDistance } from './data/airports';
 import { baseDemand } from './demand';
 import { emptyLedger, ledgerProfit, marketLease, DAYS_PER_MONTH } from './finance';
-import { estimateService, getMarket, roundTripMinutes, routeChanged } from './market';
+import { dailyRoundTrips, estimateService, getMarket, roundTripMinutes } from './market';
+import { planShortfall } from './slots';
 import { canOperate, NEVER, planFlight } from './ops';
 import { chance, hash01, rand, randInt, randRange } from './rng';
 import { addNews } from './world';
@@ -86,6 +87,8 @@ function evaluate(sim: Sim, al: Airline, hub: AirportId, dest: AirportId, types:
       est = estimateService(sim, al, hub, dest, typeId, cabin, 1 / slots, price, t.comfort, undefined, true);
     }
     if (est.loadFactor < 0.55) continue;
+    // No slots, no flights.
+    if (planShortfall(sim, al, hub, dest, est.freq).length) continue;
     const legs = est.freq * 2;
     const ownership = marketLease(typeId, 6) / DAYS_PER_MONTH / slots;
     const plan = planFlight(sim, al, typeId, cabin, 6, ownership, hub, dest, est.pax, price, legs);
@@ -129,6 +132,7 @@ function candidates(sim: Sim, al: Airline, limit: number, shortlistSize = 60): C
 
 function addAircraft(sim: Sim, al: Airline, c: Candidate, route: Route, instant: boolean): Aircraft | null {
   const g = sim.game;
+  if (planShortfall(sim, al, route.a, route.b, dailyRoundTrips(c.type, route.dist) / c.slots).length) return null;
   const { cabin, density } = cabinFor(al, c.type);
   const t = AIRCRAFT_TYPE[c.type];
   const age = instant ? randInt(g, 0, 14) : 0;
@@ -184,6 +188,8 @@ function findSharer(sim: Sim, al: Airline, c: Candidate): Aircraft | undefined {
 }
 
 function launch(sim: Sim, al: Airline, c: Candidate, instant: boolean): Route | null {
+  // The slots may have gone to an earlier launch since this candidate was weighed up.
+  if (planShortfall(sim, al, c.hub, c.dest, dailyRoundTrips(c.type, airportDistance(c.hub, c.dest)) / c.slots).length) return null;
   const res = openRoute(sim, al.id, c.hub, c.dest, al.ai!.fareLevel);
   if (!res.ok) return null;
   const route = res.value;

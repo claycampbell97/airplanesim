@@ -9,6 +9,7 @@ import {
 } from './finance';
 import { attachRoute, detachRoute, findMarket, getMarket, refreshConnections, refreshMarket, routeChanged, settlePools } from './market';
 import { faresManaged, tuneFares } from './pricing';
+import { describeShortfall, ENTRANT_SLOTS, grantSlots, HUB_SLOTS, rotationShortfall } from './slots';
 import { canOperate, legCosts, NEVER, wake } from './ops';
 import { randInt } from './rng';
 import type { Aircraft, Airline, AirportId, Hub, Order, Policy, Route, RouteStats, Triple } from './types';
@@ -313,6 +314,8 @@ export function developHub(sim: Sim, airlineId: number, airport: AirportId): Res
   if (al.cash < cost) return fail('Not enough cash');
   al.cash -= cost;
   sim.revision++;
+  // Building up a base at a slot-limited airport comes with slots from the airport's pool.
+  if (al.isPlayer) grantSlots(al, airport, HUB_SLOTS[level]);
   if (existing) {
     existing.level = level;
     sim.dirtyAirlines.add(airlineId);
@@ -405,7 +408,11 @@ export function openRoute(sim: Sim, airlineId: number, a: AirportId, b: AirportI
     profitHistory: [],
     lossMonths: 0,
   };
-  if (al.isPlayer) route.auto = al.autoFares !== false;
+  if (al.isPlayer) {
+    route.auto = al.autoFares !== false;
+    // The set-up fee at a slot-limited airport buys a newcomer's first pair of slots.
+    for (const id of [a, b]) if (AIRPORT[id].slotLimited && !(al.slots?.[id])) grantSlots(al, id, ENTRANT_SLOTS);
+  }
   al.nextFlightNo += 2;
   g.routes.push(route);
   sim.indexRoute(route);
@@ -458,6 +465,11 @@ export function setRotation(sim: Sim, acId: number, routeIds: number[]): Result 
     if (r.a !== ac.base && r.b !== ac.base) return fail(`${r.a}–${r.b} does not start at this aircraft's base (${ac.base})`);
     const check = canOperate(ac.type, r.a, r.b);
     if (!check.ok) return fail(check.reason!);
+  }
+  const owner = sim.game.airlines[ac.airline];
+  if (owner.isPlayer) {
+    const short = rotationShortfall(sim, owner, ac, unique);
+    if (short.length) return fail(describeShortfall(short[0]));
   }
   const before = new Set(ac.rotation);
   for (const rid of ac.rotation) {
