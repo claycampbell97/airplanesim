@@ -352,6 +352,10 @@ input[type='range']:focus-visible { outline: 2px solid var(--accent); outline-of
 .viewer { position: relative; width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: radial-gradient(120% 90% at 50% 20%, #152038 0%, #070b14 70%); }
 .viewer canvas { display: block; width: 100%; height: 100%; }
 
+/* ───────── List beside a detail pane ───────── */
+.split { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); gap: 14px; min-height: 0; }
+.split-list { display: flex; flex-direction: column; gap: 4px; max-height: 560px; overflow-y: auto; padding-right: 4px; }
+
 /* ───────── Flight view ───────── */
 .chase-hint { position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); padding: 7px 8px 7px 14px; display: flex; align-items: center; gap: 12px; border-radius: 12px; white-space: nowrap; }
 
@@ -360,19 +364,42 @@ input[type='range']:focus-visible { outline: 2px solid var(--accent); outline-of
 
 /* ───────── Small screens ───────── */
 @media (max-width: 860px) {
+  /* Top bar: identity, clock and speed on the first row, the money underneath. */
+  .topbar { height: auto; flex-wrap: wrap; padding: 6px 8px; row-gap: 4px; }
+  .brand { padding-right: 2px; }
+  .brand .name, .brand .sub { display: none; }
+  .clock { margin-left: auto; padding: 0 4px; }
+  .clock .date { font-size: 12.5px; }
+  .speed button { min-width: 30px; padding: 0 5px; }
+  .top-stats { order: 3; flex: 1 0 100%; border-top: 1px solid var(--line); padding-top: 3px; }
+  .top-stat { flex: 1 1 0; padding: 2px 8px; }
   .top-stats .hide-sm { display: none; }
-  .brand .name { max-width: 110px; }
-  .panel, .panel.wide { left: 12px; width: calc(100% - 24px); bottom: 118px; }
+
+  .panel, .panel.wide { left: 12px; top: 118px; width: calc(100% - 24px); bottom: 118px; }
+  .panel-body { overflow-x: auto; padding: 14px 14px 18px; }
+  .planner { top: 118px; }
   .dock { top: auto; bottom: 52px; left: 12px; right: 12px; width: auto; flex-direction: row; max-height: none; overflow-x: auto; }
+  .dock-btn { flex: none; }
   .dock-btn .tip { display: none; }
   .ticker { left: 12px; }
   .inspector { left: 12px; right: 12px; width: auto; top: auto; bottom: 118px; max-height: 46%; }
   .toasts { left: 12px; right: 12px; width: auto; bottom: 118px; }
-  .setup-body { grid-template-columns: 1fr; overflow-y: auto; }
-  .setup-col { overflow: visible; }
+
+  /* The flight view keeps the screen clear: just the way out. */
+  .hud.chasing .inspector { display: none; }
+  .chase-hint { left: 12px; right: 12px; transform: none; white-space: normal; flex-wrap: wrap; justify-content: space-between; }
+
+  .setup { width: calc(100% - 20px); max-height: calc(100% - 20px); }
+  .setup-body { display: block; overflow-y: auto; }
+  .setup-col { overflow: visible; min-height: auto; padding: 16px; }
   .setup-col + .setup-col { border-left: 0; border-top: 1px solid var(--line); }
   .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  /* Lists with a detail pane: the list becomes a strip to swipe through. */
+  .split { grid-template-columns: minmax(0, 1fr); }
+  .split-list { flex-direction: row; max-height: none; overflow-x: auto; overflow-y: hidden; padding: 0 0 6px; }
+  .split-list > * { flex: 0 0 210px; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }

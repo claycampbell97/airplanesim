@@ -190,7 +190,8 @@ function GameOverModal() {
 const SHORTCUTS: [string, string][] = [
   ['Space', 'Pause or resume'], ['1 – 4', 'Game speed'], ['O N F M B', 'Overview, routes, fleet, market, bases'],
   ['$ P R E G', 'Finance, operations, rivals, news, milestones'], ['Esc', 'Close the current panel or cancel planning'],
-  ['Drag', 'Spin the globe'], ['Scroll / pinch', 'Zoom'], ['Double-click', 'Zoom in on a point'], ['?', 'This help'],
+  ['Drag', 'Spin the globe'], ['Scroll / pinch', 'Zoom'], ['Double-click', 'Zoom in on a point'],
+  ['Click a plane', 'Flight details · ride along in the flight view'], ['?', 'This help'],
 ];
 
 function HelpModal() {

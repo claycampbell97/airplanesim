@@ -82,7 +82,7 @@ function TopBar() {
           <span className="k">Passengers / day</span>
           <span className="v">{compact(avgPax)}</span>
         </button>
-        <button className="top-stat hide-sm" onClick={() => togglePanel('network')} title="Share of seats filled this month">
+        <button className="top-stat" onClick={() => togglePanel('network')} title="Share of seats filled this month">
           <span className="k">Load factor</span>
           <span className="v">{Number.isNaN(lf) ? '—' : percent(lf)}</span>
         </button>
@@ -249,7 +249,7 @@ export function Hud() {
   const chase = useApp((s) => s.chase);
   const cruise = useApp((s) => s.cruise);
   return (
-    <div className="hud">
+    <div className={cx('hud', chase !== null && 'chasing')}>
       <TopBar />
       {!plan && chase === null && <Dock />}
       {!plan && chase === null && <OpenPanel />}

@@ -55,8 +55,8 @@ export function MarketPanel() {
         <Seg value={cat} onChange={setCat} title="Category" options={CATEGORIES.map((c) => ({ value: c, label: c === 'all' ? 'All' : CATEGORY_NAMES[c] }))} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 300px) minmax(0, 1fr)', gap: 14, minHeight: 0 }}>
-        <div className="col gap-4" style={{ maxHeight: 560, overflowY: 'auto', paddingRight: 4 }}>
+      <div className="split">
+        <div className="split-list">
           {tab === 'new' && types.map((t) => {
             const discount = activeDiscount(sim, t.id);
             return (
