@@ -205,7 +205,7 @@ export class GlobeRenderer {
       loadTexture(`${base}textures/earth_night_${tier}.jpg`, true, tick),
       loadTexture(`${base}textures/earth_aux_${tier}.jpg`, false, tick),
       loadTexture(`${base}textures/stars_${tier}.jpg`, true, tick),
-      this.borders.load(`${base}data/borders.bin`).then(tick, tick),
+      this.borders.load(`${base}data/borders.${import.meta.env.VITE_BORDERS_AS_TEXT ? 'b64.txt' : 'bin'}`).then(tick, tick),
     ]);
     const aniso = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
     for (const t of [day, night, aux]) t.anisotropy = aniso;

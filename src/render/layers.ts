@@ -20,10 +20,23 @@ export class BorderLayer {
   private coast: THREE.LineSegments | null = null;
   private borders: THREE.LineSegments | null = null;
 
+  /**
+   * Loads the border file. A URL ending in `.txt` is read as the same bytes in
+   * base64, for hosts that will not serve arbitrary binary files.
+   */
   async load(url: string): Promise<void> {
     const res = await fetch(url);
     if (!res.ok) return;
-    const view = new DataView(await res.arrayBuffer());
+    let buffer: ArrayBuffer;
+    if (url.endsWith('.txt')) {
+      const text = atob((await res.text()).trim());
+      const bytes = new Uint8Array(text.length);
+      for (let i = 0; i < text.length; i++) bytes[i] = text.charCodeAt(i);
+      buffer = bytes.buffer;
+    } else {
+      buffer = await res.arrayBuffer();
+    }
+    const view = new DataView(buffer);
     const coastCount = view.getUint32(4, true);
     const borderCount = view.getUint32(8, true);
     let o = 12;

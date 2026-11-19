@@ -104,6 +104,34 @@ describe('balance', () => {
     expect(margin).toBeLessThan(0.35);
   });
 
+  it.runIf(VERBOSE)('reports the opening moves on offer at a range of home bases', { timeout: 300_000 }, () => {
+    const difficulty = (process.env.DIFFICULTY ?? 'standard') as Difficulty;
+    console.log(`\n=== opening moves (${difficulty}): profitable suggestions out of 8, and the best daily profit ===`);
+    for (const hq of ['LHR', 'MAN', 'JFK', 'ATL', 'DEN', 'BOI', 'SIN', 'HND', 'DXB', 'GRU', 'SYD', 'JNB', 'DEL', 'LIS', 'KEF']) {
+      const sim = Sim.create({ name: 'Bot Air', code: 'BT', hq, livery: LIVERY, difficulty, seed: 7 });
+      const cells = ['at76', 'e295', 'a20n', 'b789'].map((type) => {
+        const plans = suggestRoutes(sim, sim.player, hq, type, 8);
+        const good = plans.filter((x) => x.profitPerDay > 0);
+        const best = plans[0];
+        return `${type} ${good.length}/${plans.length} ${best ? `${best.b} ${(best.profitPerDay / 1e3).toFixed(1)}k` : '-'}`.padEnd(24);
+      });
+      console.log(`  ${hq}  ${cells.join('')}`);
+    }
+  });
+
+  it.runIf(VERBOSE)('reports what widebodies can earn once an airline is established', { timeout: 900_000 }, () => {
+    const months = Number(process.env.MONTHS ?? 14);
+    for (const hq of ['LHR', 'SIN', 'JFK']) {
+      const sim = runBot(hq, 'standard', ['a20n', 'e295', 'a21n'], months);
+      const p = sim.player;
+      console.log(`\n=== widebodies from ${hq} after ${months} months: fleet ${sim.fleetOf(0).length}, reputation ${p.reputation.toFixed(0)}, hub level ${p.hubs[0].level} ===`);
+      for (const type of ['b789', 'a359', 'b77w', 'a388']) {
+        const plans = suggestRoutes(sim, p, hq, type, 6);
+        console.log(`  ${type}: ` + plans.map((x) => `${x.b} ${(x.profitPerDay / 1e3).toFixed(0)}k LF ${(x.estimate.loadFactor * 100).toFixed(0)}%`).join(' | '));
+      }
+    }
+  });
+
   it.runIf(VERBOSE)('reports other starting points', { timeout: 900_000 }, () => {
     const months = Number(process.env.MONTHS ?? 18);
     runBot('SIN', 'standard', ['a20n', 'b789', 'a21n'], months);

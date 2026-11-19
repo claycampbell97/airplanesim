@@ -361,7 +361,8 @@ input[type='range']:focus-visible { outline: 2px solid var(--accent); outline-of
 .chase-hint { position: absolute; left: 50%; bottom: 56px; transform: translateX(-50%); padding: 7px 8px 7px 14px; display: flex; align-items: center; gap: 12px; border-radius: 12px; white-space: nowrap; }
 
 /* ───────── Planner bar ───────── */
-.planner { position: absolute; left: 50%; top: 78px; transform: translateX(-50%); width: min(760px, calc(100% - 24px)); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+/* Sits to the left so that it never runs under the route card on the right. */
+.planner { position: absolute; left: 12px; top: 78px; width: min(760px, calc(100% - 396px)); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
 
 /* ───────── Small screens ───────── */
 @media (max-width: 860px) {
@@ -378,7 +379,7 @@ input[type='range']:focus-visible { outline: 2px solid var(--accent); outline-of
 
   .panel, .panel.wide { left: 12px; top: 118px; width: calc(100% - 24px); bottom: 118px; }
   .panel-body { overflow-x: auto; padding: 14px 14px 18px; }
-  .planner { top: 118px; }
+  .planner { top: 118px; width: calc(100% - 24px); }
   .dock { top: auto; bottom: 52px; left: 12px; right: 12px; width: auto; flex-direction: row; max-height: none; overflow-x: auto; }
   .dock-btn { flex: none; }
   .dock-btn .tip { display: none; }

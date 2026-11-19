@@ -206,7 +206,7 @@ function HelpModal() {
           <p><b className="strong" style={{ color: 'var(--text)' }}>1. Get an aircraft.</b> Lease or buy one in the aircraft market. Leasing is cheap up front; buying costs less in the long run.</p>
           <p><b className="strong" style={{ color: 'var(--text)' }}>2. Open a route.</b> In Routes, choose “New route”, pick an aircraft type and click a destination. The forecast uses the same model as the live game.</p>
           <p><b className="strong" style={{ color: 'var(--text)' }}>3. Tune it.</b> Aim for load factors around 80%. Fuller than that? Raise fares. Emptier? Cut fares, use a smaller aircraft, or share one aircraft between several thin routes.</p>
-          <p><b className="strong" style={{ color: 'var(--text)' }}>4. Build a hub.</b> When many routes meet at a hub, passengers connect between them and fill seats that local demand alone would not.</p>
+          <p><b className="strong" style={{ color: 'var(--text)' }}>4. Build a hub.</b> When many routes meet at a hub, passengers connect between them and fill seats that local demand alone would not. That feed, and a good reputation, are what make long-haul widebodies pay.</p>
           <p><b className="strong" style={{ color: 'var(--text)' }}>5. Mind the cash.</b> Fuel prices swing, seasons turn and rivals react. Hedge fuel when it is cheap and keep a reserve for winter.</p>
         </div>
         <table className="tbl compact">
