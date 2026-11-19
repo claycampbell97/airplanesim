@@ -2,6 +2,7 @@
 
 import { AIRCRAFT_TYPE, totalSeats } from './data/aircraft';
 import { AIRPORT, airportDistance } from './data/airports';
+import { BOOKING_SWING } from './demand';
 import { earn, feeFactor, fuelPriceFor, hubDiscount, labourFactor, ownershipPerDay, spend } from './finance';
 import { aircraftAgeYears, blockMinutes, getMarket, NIGHT_STOP_BLOCK, settlePools } from './market';
 import { chance, rand, randRange } from './rng';
@@ -328,16 +329,19 @@ function fly(sim: Sim, ac: Aircraft, route: Route, to: AirportId, t: number): vo
   for (let c = 0; c < 3; c++) {
     const local = route.pool[dir][c];
     const conn = route.connPool[dir][c];
-    const waiting = local + conn;
-    if (waiting <= 0 || ac.cabin[c] <= 0) continue;
-    const want = waiting * (0.92 + 0.16 * rand(g));
-    const taken = Math.min(ac.cabin[c], Math.floor(want + rand(g)));
+    if (local + conn <= 0 || ac.cabin[c] <= 0) continue;
+    // How many of those waiting want this particular departure varies a good deal
+    // from flight to flight. Those who cannot get a seat on it go elsewhere.
+    const u = 1 - BOOKING_SWING + 2 * BOOKING_SWING * rand(g);
+    const wantLocal = local * u;
+    const wantConn = conn * u;
+    // Full-fare local passengers get seats before prorated connections.
+    const takenLocal = Math.min(ac.cabin[c], Math.floor(wantLocal + rand(g)));
+    const takenConn = Math.max(0, Math.min(ac.cabin[c] - takenLocal, Math.floor(wantConn + rand(g))));
+    route.pool[dir][c] = Math.max(0, local - Math.max(wantLocal, takenLocal));
+    route.connPool[dir][c] = Math.max(0, conn - Math.max(wantConn, takenConn));
+    const taken = takenLocal + takenConn;
     if (taken <= 0) continue;
-    // Revenue management: full-fare local passengers get seats before prorated connections.
-    const takenLocal = Math.min(local, taken);
-    const takenConn = Math.min(conn, taken - takenLocal);
-    route.pool[dir][c] = Math.max(0, local - takenLocal);
-    route.connPool[dir][c] = Math.max(0, conn - takenConn);
     pax[c] = taken;
     connPax += takenConn;
     ticketsByClass[c] = takenLocal * route.price[c] + takenConn * route.connFare[c];

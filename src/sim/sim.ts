@@ -15,6 +15,7 @@ import {
 } from './market';
 import type { Market, Offer } from './market';
 import { checkObjectives, initialObjectives } from './objectives';
+import { manageFares } from './pricing';
 import { stepAircraft } from './ops';
 import { emptyStats } from './actions';
 import { dayIndex, formatMonth, monthIndex } from './time';
@@ -354,6 +355,7 @@ export class Sim {
     }
     lap('rivals');
 
+    manageFares(this);
     refreshAllMarkets(this);
     lap('markets');
 

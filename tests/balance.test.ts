@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { acquireAircraft, closeRoute, disposeAircraft, openRoute, setPrice, setRotation } from '../src/sim/actions';
-import { getMarket } from '../src/sim/market';
+import { acquireAircraft, closeRoute, disposeAircraft, openRoute, setRotation } from '../src/sim/actions';
 import { AIRCRAFT_TYPE } from '../src/sim/data/aircraft';
+import { getMarket } from '../src/sim/market';
 import { equity, ledgerCost, ledgerProfit, ledgerRevenue, leaseCapacity, leaseCommitment, valuation } from '../src/sim/finance';
 import { suggestRoutes } from '../src/sim/planner';
 import { Sim } from '../src/sim/sim';
@@ -42,17 +42,10 @@ function runBot(hq: string, difficulty: Difficulty, types: string[], months: num
     }
     for (let d = 0; d < 30; d++) sim.advance(1440);
 
-    // Basic housekeeping any player would do: nudge fares towards an ~80% load factor,
-    // and redeploy aircraft from routes that keep losing money.
+    // Basic housekeeping any player would do: redeploy aircraft from routes that keep
+    // losing money. (Fares are left to revenue management.)
     for (const r of [...sim.routesOf(0)]) {
       if (r.prev.flights < 8) continue;
-      const seats = r.prev.seats[0] + r.prev.seats[1] + r.prev.seats[2];
-      const pax = r.prev.pax[0] + r.prev.pax[1] + r.prev.pax[2];
-      const lf = seats ? pax / seats : 0;
-      const ref = getMarket(sim, r.a, r.b).ref;
-      const level = r.price[0] / ref[0];
-      const next = Math.max(0.7, Math.min(1.5, lf > 0.87 ? level * 1.04 : lf < 0.68 ? level * 0.96 : level));
-      if (next !== level) setPrice(sim, r.id, [ref[0] * next, ref[1] * next, ref[2] * next]);
       if (r.lossMonths >= 3) {
         const planes = r.aircraft.map((id) => sim.acById.get(id)!);
         closeRoute(sim, r.id);
@@ -83,7 +76,8 @@ function runBot(hq: string, difficulty: Difficulty, types: string[], months: num
       const seats = r.prev.seats[0] + r.prev.seats[1] + r.prev.seats[2];
       const pax = r.prev.pax[0] + r.prev.pax[1] + r.prev.pax[2];
       const f = forecasts.get(r.id);
-      return `${r.a}-${r.b} LF ${seats ? ((pax / seats) * 100).toFixed(0) : 0}% (fc ${f ? (f.lf * 100).toFixed(0) : '?'}%) ${((r.prev.revenue - r.prev.cost) / 1e3).toFixed(0)}k (fc ${f ? (f.profit / 1e3).toFixed(0) : '?'}k)`;
+      const level = r.price[0] / getMarket(sim, r.a, r.b).ref[0];
+      return `${r.a}-${r.b} LF ${seats ? ((pax / seats) * 100).toFixed(0) : 0}% (fc ${f ? (f.lf * 100).toFixed(0) : '?'}%) fare ${(level * 100).toFixed(0)}% ${((r.prev.revenue - r.prev.cost) / 1e3).toFixed(0)}k (fc ${f ? (f.profit / 1e3).toFixed(0) : '?'}k)`;
     }).join(' | '));
   }
   return sim;

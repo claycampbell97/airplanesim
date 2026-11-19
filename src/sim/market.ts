@@ -10,7 +10,7 @@
 
 import { AIRCRAFT_TYPE } from './data/aircraft';
 import { AIRPORT, AIRPORTS, airportDistance, pairIndex } from './data/airports';
-import { baseDemand, classSplit, frequencyCapture, leisureScore, businessScore, priceResponse, refFare, REGION_GROWTH, seasonOf } from './demand';
+import { baseDemand, classSplit, expectedBoarded, frequencyCapture, leisureScore, businessScore, priceResponse, refFare, REGION_GROWTH, seasonOf } from './demand';
 import { yearFraction, yearsElapsed } from './time';
 import type { Aircraft, Airline, AirportId, RegionId, Route, Triple } from './types';
 import type { Sim } from './sim';
@@ -328,17 +328,22 @@ function routeBoost(sim: Sim, r: Route): number {
   return r.maturity * (sim.game.time < r.promoUntil ? 1.3 : 1);
 }
 
-/** Recomputes local inflow rates for every route on a market. */
-export function refreshMarket(sim: Sim, m: Market): void {
-  if (m.stamp !== sim.factorStamp) applyTimeFactor(sim, m);
-  if (m.routes.length === 0) return;
+/** Every offer on a market as the share model sees it: its routes in order, then the incumbents. */
+export function marketInputs(sim: Sim, m: Market): OfferInput[] {
   const inputs: OfferInput[] = [];
   for (const r of m.routes) {
     const o = offerOf(sim, r);
     inputs.push({ freq: o.freq, seats: o.seats, price: r.price, quality: o.quality, boost: routeBoost(sim, r) });
   }
   inputs.push(m.others);
-  const split = splitMarket(m, inputs);
+  return inputs;
+}
+
+/** Recomputes local inflow rates for every route on a market. */
+export function refreshMarket(sim: Sim, m: Market): void {
+  if (m.stamp !== sim.factorStamp) applyTimeFactor(sim, m);
+  if (m.routes.length === 0) return;
+  const split = splitMarket(m, marketInputs(sim, m));
   for (let i = 0; i < m.routes.length; i++) {
     const r = m.routes[i];
     settlePools(sim, r);
@@ -678,8 +683,8 @@ export function estimateService(
   let paxTotal = 0;
   for (let c = 0; c < 3; c++) {
     // Local passengers board first; connections fill what is left.
-    const local = freq > 0 ? Math.min(cabin[c], mine[c] / freq) : 0;
-    conn[c] = freq > 0 ? Math.min(cabin[c] - local, connPax[c] / freq) : 0;
+    const local = freq > 0 ? expectedBoarded(mine[c] / freq, cabin[c]) : 0;
+    conn[c] = freq > 0 ? Math.min(cabin[c] - local, expectedBoarded(connPax[c] / freq, cabin[c])) : 0;
     connFare[c] = connPax[c] > 0 ? connRev[c] / connPax[c] : m.ref[c] * 0.6;
     pax[c] = local + conn[c];
     seatsTotal += cabin[c];

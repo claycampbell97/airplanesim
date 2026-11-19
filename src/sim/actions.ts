@@ -7,7 +7,8 @@ import { AIRPORT, airportDistance } from './data/airports';
 import {
   DAYS_PER_MONTH, earn, feeFactor, hubSetupCost, leaseCapacity, leaseCommitment, marketLease, marketValue, spend,
 } from './finance';
-import { attachRoute, detachRoute, findMarket, getMarket, refreshConnections, routeChanged, settlePools } from './market';
+import { attachRoute, detachRoute, findMarket, getMarket, refreshConnections, refreshMarket, routeChanged, settlePools } from './market';
+import { faresManaged, tuneFares } from './pricing';
 import { canOperate, legCosts, NEVER, wake } from './ops';
 import { randInt } from './rng';
 import type { Aircraft, Airline, AirportId, Hub, Order, Policy, Route, RouteStats, Triple } from './types';
@@ -404,6 +405,7 @@ export function openRoute(sim: Sim, airlineId: number, a: AirportId, b: AirportI
     profitHistory: [],
     lossMonths: 0,
   };
+  if (al.isPlayer) route.auto = al.autoFares !== false;
   al.nextFlightNo += 2;
   g.routes.push(route);
   sim.indexRoute(route);
@@ -471,9 +473,13 @@ export function setRotation(sim: Sim, acId: number, routeIds: number[]): Result 
   }
   ac.rotation = unique;
   ac.rotIndex = -1;
+  const al = sim.game.airlines[ac.airline];
   for (const rid of new Set([...before, ...unique])) {
     const r = sim.routeById.get(rid);
-    if (r) routeChanged(sim, r);
+    if (!r) continue;
+    routeChanged(sim, r);
+    // A change of capacity calls for new fares at once, not three days from now.
+    if (faresManaged(al, r) && tuneFares(sim, r, undefined, 30)) refreshMarket(sim, getMarket(sim, r.a, r.b));
   }
   if (unique.length > 0) wake(sim, ac);
   else if (ac.phase === 'turnaround' && ac.at === ac.base) {
@@ -506,6 +512,22 @@ export function setPrice(sim: Sim, routeId: number, price: Triple): Result {
   }
   routeChanged(sim, r);
   return ok(undefined);
+}
+
+/** Hands a route's fares to revenue management, or takes them back. */
+export function setFareMode(sim: Sim, routeId: number, auto: boolean): Result {
+  const r = sim.routeById.get(routeId);
+  if (!r) return fail('Route not found');
+  r.auto = auto;
+  if (auto && tuneFares(sim, r, undefined, 30)) refreshMarket(sim, getMarket(sim, r.a, r.b));
+  return ok(undefined);
+}
+
+/** Sets how new routes are priced and, optionally, switches every existing route too. */
+export function setAutoFares(sim: Sim, airlineId: number, auto: boolean, existing = true): void {
+  const al = sim.game.airlines[airlineId];
+  al.autoFares = auto;
+  if (existing) for (const r of sim.routesOf(airlineId)) setFareMode(sim, r.id, auto);
 }
 
 export function promoCost(sim: Sim, r: Route): number {

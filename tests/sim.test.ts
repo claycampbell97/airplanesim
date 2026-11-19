@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { acquireAircraft, deliveryDays, openRoute, setRotation } from '../src/sim/actions';
+import { acquireAircraft, deliveryDays, openRoute, setFareMode, setRotation } from '../src/sim/actions';
+import { expectedBoarded } from '../src/sim/demand';
+import { getMarket } from '../src/sim/market';
 import { suggestRoutes } from '../src/sim/planner';
 import { Sim } from '../src/sim/sim';
 import { ledgerCost, ledgerProfit, ledgerRevenue } from '../src/sim/finance';
@@ -92,6 +94,54 @@ describe('simulation', () => {
     for (let d = 0; d < 7; d++) sim.advance(1440);
     expect(p.totalFlights).toBeGreaterThan(0);
     expect(p.totalPax).toBeGreaterThan(0);
+  });
+
+  it('expects fewer passengers than seats or demand when bookings swing', () => {
+    expect(expectedBoarded(50, 180)).toBe(50);
+    expect(expectedBoarded(400, 180)).toBe(180);
+    // Demand equal to capacity: some flights go out with empty seats, others leave people behind.
+    const even = expectedBoarded(180, 180);
+    expect(even).toBeLessThan(180);
+    expect(even).toBeGreaterThan(150);
+    // More demand never means fewer passengers.
+    let last = 0;
+    for (let d = 0; d <= 400; d += 10) {
+      const b = expectedBoarded(d, 180);
+      expect(b).toBeGreaterThanOrEqual(last);
+      expect(b).toBeLessThanOrEqual(Math.min(d, 180) + 1e-9);
+      last = b;
+    }
+  });
+
+  it('manages fares: dearer where flights are full, cheaper where they are empty, untouched when manual', () => {
+    const sim = Sim.create({ name: 'Test Air', code: 'TA', hq: 'LHR', livery: LIVERY, difficulty: 'standard', seed: 11 });
+    const p = sim.player;
+    p.cash += 3e9;
+    p.reputation = 60;
+    const fly = (dest: string, type: string, auto: boolean) => {
+      const route = openRoute(sim, 0, 'LHR', dest);
+      const order = acquireAircraft(sim, 0, type, { lease: true });
+      if (!route.ok || !order.ok) throw new Error('setup failed');
+      expect(route.value.auto).toBe(true);
+      if (!auto) setFareMode(sim, route.value.id, false);
+      setRotation(sim, sim.fleetOf(0)[sim.fleetOf(0).length - 1].id, [route.value.id]);
+      return route.value;
+    };
+    // A turboprop into a huge market fills at any sensible fare; a 777 on a thin route cannot.
+    const small = fly('AMS', 'at76', true);
+    const big = fly('KEF', 'b779', true);
+    const manual = fly('MAD', 'a20n', false);
+    const manualFare = [...manual.price];
+    for (let d = 0; d < 90; d++) sim.advance(1440);
+    const level = (r: typeof small) => r.price[0] / getMarket(sim, r.a, r.b).ref[0];
+    expect(level(small)).toBeGreaterThan(1.1);
+    expect(level(big)).toBeLessThan(0.9);
+    expect(manual.price).toEqual(manualFare);
+    // Managed fares stay inside the band.
+    for (const r of [small, big]) {
+      expect(level(r)).toBeGreaterThanOrEqual(0.49);
+      expect(level(r)).toBeLessThanOrEqual(2.01);
+    }
   });
 
   it('lapses an unanswered decision on its stated day', () => {

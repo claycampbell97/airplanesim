@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Megaphone, Plus, RefreshCw, Trash2, Waypoints, X } from 'lucide-react';
-import { assignToRoute, closeRoute, launchPromo, promoCost, setPrice, unassignFromRoute } from '../../sim/actions';
+import { assignToRoute, closeRoute, launchPromo, promoCost, setAutoFares, setFareMode, setPrice, unassignFromRoute } from '../../sim/actions';
 import { AIRCRAFT_TYPE, AIRCRAFT_TYPES, CLASS_NAMES, typeName } from '../../sim/data/aircraft';
 import { AIRPORT } from '../../sim/data/airports';
 import { blockMinutes, dailyRoundTrips, getMarket, offerOf, OTHER_AIRLINES, rotationFrequency } from '../../sim/market';
@@ -12,9 +12,9 @@ import { formatDate, formatMonthShort } from '../../sim/time';
 import type { Route, Triple } from '../../sim/types';
 import { attempt, confirm, loadFactorOf, recentStats, routeCities, routeLabel } from '../app/act';
 import { dollars, duration, integer, km, money, percent, signedMoney, sum3 } from '../app/format';
-import { openPanel, showAircraft, showRoute, startPlan, useApp, useSim } from '../app/store';
+import { openPanel, refresh, showAircraft, showRoute, startPlan, toast, useApp, useSim } from '../app/store';
 import { ColumnChart, Sparkline } from '../components/charts';
-import { cx, Empty, Logo, Panel, Slider, Th, Tile, useSort } from '../components/ui';
+import { cx, Empty, Logo, Panel, Seg, Slider, Th, Tile, useSort } from '../components/ui';
 
 type SortKey = 'route' | 'dist' | 'freq' | 'load' | 'profit';
 
@@ -38,18 +38,28 @@ function Fares({ route }: { route: Route }) {
       existing: route, price: draft, aircraft: first, count: offer.freq / dailyRoundTrips(first.type, route.dist),
     })
     : null;
-  const changed = draft.some((v, i) => v !== route.price[i]);
+  const managed = !!route.auto;
+  const changed = !managed && draft.some((v, i) => v !== route.price[i]);
   const commit = (next: Triple) => attempt(setPrice(sim, route.id, next));
 
   return (
     <div className="col gap-6">
+      <div className="row between wrap">
+        <Seg value={managed ? 'managed' : 'manual'} title="Who sets the fares"
+          onChange={(v) => attempt(setFareMode(sim, route.id, v === 'managed'))}
+          options={[
+            { value: 'managed', label: 'Managed', title: 'Revenue management moves each fare to where the cabin earns the most' },
+            { value: 'manual', label: 'Manual', title: 'You set the fares and they stay put' },
+          ]} />
+        <span className="small muted">{managed ? 'Reviewed every few days to earn the most from each cabin.' : 'Fares stay where you put them.'}</span>
+      </div>
       {[0, 1, 2].map((c) => {
         if (offer.seats[c] <= 0 && route.aircraft.length > 0) return null;
         const pct = Math.round((draft[c] / m.ref[c]) * 100);
         return (
           <div key={c} style={{ display: 'grid', gridTemplateColumns: '78px 1fr 132px', gap: 12, alignItems: 'center' }}>
             <span className="muted">{CLASS_NAMES[c]}</span>
-            <Slider label={`${CLASS_NAMES[c]} fare`} min={50} max={200} step={1} value={Math.max(50, Math.min(200, pct))}
+            <Slider label={`${CLASS_NAMES[c]} fare`} min={50} max={200} step={1} value={Math.max(50, Math.min(200, pct))} disabled={managed}
               onChange={(v) => setDraft((d) => { const n: Triple = [d[0], d[1], d[2]]; n[c] = Math.round((m.ref[c] * v) / 100); return n; })}
               onCommit={(v) => { const n: Triple = [draft[0], draft[1], draft[2]]; n[c] = Math.round((m.ref[c] * v) / 100); commit(n); }} />
             <span className="num right"><b className="strong">{dollars(draft[c])}</b> <span className={cx('small', pct > 115 ? 'warn' : pct < 85 ? 'good' : 'dim')}>{pct}%</span></span>
@@ -62,7 +72,7 @@ function Fares({ route }: { route: Route }) {
             ? <>At these fares: about <b className="strong" style={{ color: 'var(--text)' }}>{percent(forecast.estimate.loadFactor)}</b> full, <b className={cx('strong', forecast.profitPerDay < 0 ? 'bad' : 'good')}>{signedMoney(forecast.profitPerDay)}</b>/day</>
             : 'Assign an aircraft to see a forecast.'}
         </span>
-        <button className="btn ghost sm" onClick={() => commit([Math.round(m.ref[0]), Math.round(m.ref[1]), Math.round(m.ref[2])])} title="Set all fares to the market reference"><RefreshCw />Market fares</button>
+        {!managed && <button className="btn ghost sm" onClick={() => commit([Math.round(m.ref[0]), Math.round(m.ref[1]), Math.round(m.ref[2])])} title="Set all fares to the market reference"><RefreshCw />Market fares</button>}
       </div>
       {changed && <div className="tiny dim">Release the slider to apply.</div>}
     </div>
@@ -231,8 +241,13 @@ export function NetworkPanel() {
 
   const rows = routes.map((r) => {
     const stats = recentStats(r);
-    return { r, freq: offerOf(sim, r).freq * 2, lf: loadFactorOf(stats), profit: r.prev.flights ? r.prev.revenue - r.prev.cost : NaN };
+    return {
+      r, freq: offerOf(sim, r).freq * 2, lf: loadFactorOf(stats), profit: r.prev.flights ? r.prev.revenue - r.prev.cost : NaN,
+      fare: r.price[0] / getMarket(sim, r.a, r.b).ref[0],
+    };
   });
+  const managedCount = routes.filter((r) => r.auto).length;
+  const fareMode = managedCount === routes.length ? 'managed' : managedCount === 0 ? 'manual' : 'mixed';
   const num = (v: number) => (Number.isNaN(v) ? -Infinity : v);
   rows.sort((x, y) => {
     const k = sort.key;
@@ -250,19 +265,31 @@ export function NetworkPanel() {
           {routes.length === 0 ? (
             <Empty title="No routes yet">Choose a base and an aircraft type above, then click a destination on the globe. The planner forecasts passengers and profit before you commit.</Empty>
           ) : (
+            <>
+            <div className="row between wrap small">
+              <span className="muted">
+                {fareMode === 'managed' ? 'Revenue management sets the fares on every route.'
+                  : fareMode === 'manual' ? 'You set the fares on every route.'
+                    : `Revenue management sets the fares on ${managedCount} of ${routes.length} routes.`}
+              </span>
+              <Seg value={fareMode} title="Fares on all routes"
+                onChange={(v) => { if (v !== 'mixed') { setAutoFares(sim, 0, v === 'managed'); refresh(); toast('info', v === 'managed' ? 'All fares are now managed' : 'All fares are now set by hand', 'New routes will follow suit.'); } }}
+                options={[{ value: 'managed', label: 'Managed' }, { value: 'manual', label: 'Manual' }]} />
+            </div>
             <table className="tbl">
               <thead>
                 <tr>
                   <Th k="route" sort={sort} onSort={onSort}>Route</Th>
                   <Th k="dist" sort={sort} onSort={onSort} right>Distance</Th>
                   <Th k="freq" sort={sort} onSort={onSort} right>Flights/day</Th>
+                  <th className="r" title="Economy fare compared with the market's reference fare">Fare</th>
                   <Th k="load" sort={sort} onSort={onSort} right>Load</Th>
                   <Th k="profit" sort={sort} onSort={onSort} right>Last month</Th>
                   <th className="r">Trend</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map(({ r, freq, lf, profit }) => (
+                {rows.map(({ r, freq, lf, profit, fare }) => (
                   <tr key={r.id} className="click" onClick={() => showRoute(r.id)}>
                     <td>
                       <div className="strong mono">{routeLabel(r)}</div>
@@ -270,6 +297,7 @@ export function NetworkPanel() {
                     </td>
                     <td className="r muted">{km(r.dist)}</td>
                     <td className={cx('r', freq === 0 && 'warn')}>{freq.toFixed(1)}</td>
+                    <td className="r muted" title={r.auto ? 'Managed' : 'Set by hand'}>{Math.round(fare * 100)}%{r.auto ? '' : ' ✎'}</td>
                     <td className={cx('r', loadTone(lf))}>{Number.isNaN(lf) ? '—' : percent(lf)}</td>
                     <td className={cx('r', profit < 0 ? 'bad' : undefined)}>{Number.isNaN(profit) ? '—' : money(profit)}</td>
                     <td className="r"><div style={{ display: 'inline-block' }}><Sparkline values={r.profitHistory.slice(-12)} width={72} height={22} /></div></td>
@@ -277,6 +305,7 @@ export function NetworkPanel() {
                 ))}
               </tbody>
             </table>
+            </>
           )}
         </>
       )}

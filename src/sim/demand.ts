@@ -215,3 +215,24 @@ export function topMarkets(from: AirportId, count: number, filter?: (a: Airport)
   out.sort((x, y) => y.demand - x.demand);
   return out.slice(0, count);
 }
+
+/**
+ * Bookings for one departure vary by this much either side of the average, which is
+ * why an airline that prices to fill every seat on average still flies with some empty.
+ */
+export const BOOKING_SWING = 0.35;
+
+/**
+ * Passengers boarded per flight on average when `demand` people want each flight
+ * and there are `seats`: a flight sized exactly to its average demand leaves seats
+ * empty on quiet days and people behind on busy ones.
+ */
+export function expectedBoarded(demand: number, seats: number): number {
+  if (seats <= 0 || demand <= 0) return 0;
+  const lo = 1 - BOOKING_SWING;
+  const hi = 1 + BOOKING_SWING;
+  if (demand * hi <= seats) return demand;
+  if (demand * lo >= seats) return seats;
+  const u = seats / demand;
+  return (demand * (u * u - lo * lo) * 0.5 + seats * (hi - u)) / (hi - lo);
+}

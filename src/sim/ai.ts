@@ -237,7 +237,6 @@ export function reviewRival(sim: Sim, al: Airline): void {
     if (ac.phase === 'idle' && ac.rotation.length === 0) sim.removeAircraft(ac);
   }
 
-  const st = STYLE[ai.style];
   let grown = false;
   for (const r of [...sim.routesOf(al.id)]) {
     if (r.prev.flights < 4) continue;
@@ -245,17 +244,7 @@ export function reviewRival(sim: Sim, al: Airline): void {
     const margin = r.prev.revenue > 0 ? (r.prev.revenue - r.prev.cost) / r.prev.revenue : -1;
     const m = getMarket(sim, r.a, r.b);
 
-    // Yield management: nudge fares towards an ~80% load factor.
-    const level = r.price[0] / m.ref[0];
-    let next = level;
-    if (lf > 0.87) next = level * 1.035;
-    else if (lf < 0.66) next = level * 0.965;
-    next = Math.max(st.fare * 0.72, Math.min(st.fare * 1.45, next));
-    if (next !== level) {
-      for (let c = 0; c < 3; c++) r.price[c] = Math.round(m.ref[c] * next);
-      routeChanged(sim, r);
-    }
-
+    // (Fares are looked after by revenue management: see pricing.ts.)
     if (margin < -0.06) r.lossMonths += 1;
     else r.lossMonths = Math.max(0, r.lossMonths - 1);
 

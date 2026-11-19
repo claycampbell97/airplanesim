@@ -244,6 +244,8 @@ export interface Airline {
   nextFlightNo: number;
   nextReg: number;
   founded: number;
+  /** New routes have their fares managed automatically (the player's preference; on unless set to false). */
+  autoFares?: boolean;
 }
 
 export interface RouteStats {
@@ -288,6 +290,8 @@ export interface Route {
   profitHistory: number[];
   /** Consecutive loss-making months (used by the AI). */
   lossMonths: number;
+  /** Fares are set by revenue management rather than by hand (the player's routes; rivals always use it). */
+  auto?: boolean;
 }
 
 export type AircraftPhase = 'delivery' | 'idle' | 'turnaround' | 'enroute' | 'maintenance' | 'grounded';

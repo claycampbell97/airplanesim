@@ -65,17 +65,18 @@ export function Seg<T extends string | number>({ value, options, onChange, title
   );
 }
 
-export function Slider({ value, min, max, step = 1, onChange, onCommit, label }: {
+export function Slider({ value, min, max, step = 1, onChange, onCommit, label, disabled }: {
   value: number; min: number; max: number; step?: number;
   onChange: (v: number) => void;
   /** Called when the user lets go, for changes that are expensive to apply live. */
   onCommit?: (v: number) => void;
   label?: string;
+  disabled?: boolean;
 }) {
   const fill = `${((value - min) / (max - min)) * 100}%`;
   return (
     <input
-      type="range" min={min} max={max} step={step} value={value} aria-label={label}
+      type="range" min={min} max={max} step={step} value={value} aria-label={label} disabled={disabled}
       style={{ '--fill': fill } as CSSProperties}
       onChange={(e) => onChange(Number(e.target.value))}
       onPointerUp={(e) => onCommit?.(Number((e.target as HTMLInputElement).value))}
