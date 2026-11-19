@@ -21,10 +21,10 @@ function FirstSteps() {
   const fleet = sim.fleetOf(0);
   const routes = sim.routesOf(0);
   const steps: { done: boolean; title: string; detail: string; panel: PanelId; cta: string }[] = [
-    { done: fleet.length > 0, title: 'Get your first aircraft', detail: 'Leasing costs one month’s rent up front. A narrowbody suits busy routes; a turboprop or regional jet suits thin ones.', panel: 'market', cta: 'Aircraft market' },
+    { done: fleet.length > 0, title: 'Get your first aircraft', detail: 'Leasing costs one month’s rent up front, and your first aircraft arrives within three days. A narrowbody suits busy routes; a turboprop or regional jet suits thin ones.', panel: 'market', cta: 'Aircraft market' },
     { done: routes.length > 0, title: 'Open a route', detail: 'Plan it on the globe: the forecast shows the load factor and daily profit before you commit.', panel: 'network', cta: 'Plan a route' },
     { done: routes.some((r) => r.aircraft.length > 0), title: 'Put an aircraft on the route', detail: 'A route earns nothing until an aircraft is assigned to it.', panel: 'fleet', cta: 'Fleet' },
-    { done: p.totalFlights > 0, title: 'Start the clock', detail: 'Press Space or pick a speed in the top-right corner and watch your first flight leave.', panel: 'overview', cta: '' },
+    { done: p.totalFlights > 0, title: 'Start the clock', detail: 'Press Space or pick a speed in the top-right corner. 30× skips the wait for a delivery; slow down to watch your first flight leave.', panel: 'overview', cta: '' },
   ];
   const next = steps.findIndex((s) => !s.done);
   if (next < 0) return null;

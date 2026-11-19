@@ -105,6 +105,12 @@ const CITY_OVERRIDES = {
   MSP: 'Minneapolis', DTW: 'Detroit', SEA: 'Seattle', CVG: 'Cincinnati', BDL: 'Hartford',
   RDU: 'Raleigh–Durham', JAC: 'Jackson Hole', ASE: 'Aspen', BZN: 'Bozeman', PSP: 'Palm Springs',
   FLR: 'Florence', XNN: 'Xining', CAN: 'Guangzhou',
+  // Airports listed under the commune they stand in rather than the city they serve.
+  EDI: 'Edinburgh', LYS: 'Lyon', VCE: 'Venice', NAP: 'Naples', DMM: 'Dammam', MRS: 'Marseille',
+  GOI: 'Goa', KRK: 'Kraków', KNO: 'Medan', MLA: 'Malta', TIA: 'Tirana', ISB: 'Islamabad',
+  TRN: 'Turin', SDJ: 'Sendai', MAH: 'Menorca', VRN: 'Verona', ZAG: 'Zagreb', CRK: 'Clark',
+  PRN: 'Pristina', VVO: 'Vladivostok', SKP: 'Skopje', DJE: 'Djerba', EBL: 'Erbil', VRA: 'Varadero',
+  LJU: 'Ljubljana', DJJ: 'Jayapura', CAY: 'Cayenne', MAJ: 'Majuro', TRW: 'Tarawa',
 };
 
 /** OurAirports municipalities sometimes carry districts or regions: "Inverness, Highland". */

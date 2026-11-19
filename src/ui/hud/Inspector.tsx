@@ -7,7 +7,8 @@ import { AIRPORT, airportDistance, TIER_NAMES } from '../../sim/data/airports';
 import { baseDemand, topMarkets } from '../../sim/demand';
 import { feeFactor, HUB_LEVEL_NAMES, hubMonthlyFee, hubSetupCost } from '../../sim/finance';
 import { formatClock } from '../../sim/time';
-import type { Aircraft, Airport } from '../../sim/types';
+import type { Aircraft, AircraftCategory, Airport } from '../../sim/types';
+import { altitudeProfile } from '../../render/arcs';
 import { attempt, confirm, flightNumber } from '../app/act';
 import { duration, integer, km, money, percent, signedMoney, sum3 } from '../app/format';
 import { game, inspectAirport, inspectFlight, setChase, setState, showAircraft, showRoute, startPlan, useApp, useSim } from '../app/store';
@@ -137,6 +138,8 @@ function AirportCard({ airport }: { airport: Airport }) {
   );
 }
 
+const CRUISE_FEET: Record<AircraftCategory, number> = { turboprop: 24_000, regional: 35_000, narrowbody: 37_000, widebody: 39_000, jumbo: 38_000 };
+
 function FlightCard({ ac }: { ac: Aircraft }) {
   const sim = useSim();
   const chase = useApp((s) => s.chase);
@@ -149,6 +152,12 @@ function FlightCard({ ac }: { ac: Aircraft }) {
   const progress = leg ? Math.max(0, Math.min(1, (now - leg.dep) / (leg.arr - leg.dep))) : 0;
   const seats = totalSeats(ac.cabin);
   const following = game.globe?.followedAircraft === ac.id;
+  // Flight level and speed as the crew would read them: short hops never reach the full cruise level.
+  const dist = leg ? airportDistance(leg.from, leg.to) : 0;
+  const profile = leg ? altitudeProfile(progress, dist) : 0;
+  const altitude = Math.round((CRUISE_FEET[type.category] * Math.min(1, 0.45 + dist / 900) * profile) / 100) * 100;
+  const speed = Math.round((type.speed * (0.5 + 0.5 * Math.min(1, profile * 1.6))) / 5) * 5;
+  const stage = profile > 0.97 ? 'Cruising' : progress < 0.5 ? 'Climbing' : 'Descending';
 
   return (
     <aside className="inspector glass">
@@ -173,9 +182,13 @@ function FlightCard({ ac }: { ac: Aircraft }) {
               </div>
               <Meter value={progress} />
               <div className="row between tiny dim">
-                <span>{km(airportDistance(leg.from, leg.to) * progress)} flown</span>
+                <span>{km(dist * progress)} flown</span>
                 <span>{duration(Math.max(0, leg.arr - now))} to go{leg.delay > 15 ? ` · departed ${Math.round(leg.delay)} min late` : ''}</span>
               </div>
+            </div>
+            <div className="row between small" title="Altitude and ground speed">
+              <span className="badge">{stage}</span>
+              <span className="num muted">{integer(altitude)} ft · {integer(speed)} km/h</span>
             </div>
             {leg.route >= 0 ? (
               <dl className="kv small">

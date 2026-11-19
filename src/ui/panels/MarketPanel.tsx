@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Store } from 'lucide-react';
-import { activeDiscount, deliveryDays, newLease, newPrice } from '../../sim/actions';
+import { activeDiscount, deliveryDaysFor, newLease, newPrice } from '../../sim/actions';
 import {
   AIRCRAFT_TYPE, AIRCRAFT_TYPES, CATEGORY_NAMES, defaultPreset, makeCabin, totalSeats, typeName,
 } from '../../sim/data/aircraft';
@@ -114,7 +114,7 @@ export function MarketPanel() {
                 {tab === 'new' ? 'Order' : 'Acquire'}…
               </button>
               <span className="small muted">
-                {tab === 'new' ? `Delivered in ${deliveryDays(type.id)} days. ` : ''}
+                {tab === 'new' ? `Delivered in ${deliveryDaysFor(sim, p, type.id)} days. ` : ''}
                 Lease credit: {money(committed)} of {money(capacity)}/mo used.
               </span>
             </div>

@@ -1,7 +1,7 @@
 // Dialogs: decisions, confirmations, aircraft orders, help and the end of the game.
 
 import { useEffect, useState } from 'react';
-import { acquireAircraft, deliveryDays, newLease, newPrice } from '../../sim/actions';
+import { acquireAircraft, deliveryDays, deliveryDaysFor, newLease, newPrice } from '../../sim/actions';
 import { AIRCRAFT_TYPE, CLASS_NAMES, makeCabin, presetsFor, defaultPreset, totalSeats, typeName } from '../../sim/data/aircraft';
 import { AIRPORT } from '../../sim/data/airports';
 import { leaseCapacity, leaseCommitment, valuation } from '../../sim/finance';
@@ -90,7 +90,7 @@ function AcquireModal({ modal }: { modal: Extract<Modal, { kind: 'acquire' }> })
   const rate = listing ? listing.lease : newLease(sim, type.id, p);
   const n = listing ? 1 : count;
   const upfront = (lease ? rate : price) * n;
-  const days = listing ? 3 : deliveryDays(type.id);
+  const days = listing ? 3 : deliveryDaysFor(sim, p, type.id);
   const capacity = leaseCapacity(sim, p);
   const committed = leaseCommitment(sim, p);
   const overLease = lease && committed + rate * n > capacity;
@@ -106,7 +106,11 @@ function AcquireModal({ modal }: { modal: Extract<Modal, { kind: 'acquire' }> })
     if (done > 0) {
       game.globe?.invalidate();
       refresh();
-      toast('good', `${done > 1 ? `${done} × ` : ''}${typeName(type)} ${lease ? 'leased' : 'ordered'}`, `Delivery to ${base} on ${formatDate(sim.game.time + days * 1440)}.`, undefined, 'cash');
+      const date = formatDate(sim.game.time + days * 1440);
+      // Only a new airline's very first aircraft comes early.
+      const staggered = !listing && done > 1 && days < deliveryDays(type.id);
+      toast('good', `${done > 1 ? `${done} × ` : ''}${typeName(type)} ${lease ? 'leased' : 'ordered'}`,
+        staggered ? `The first arrives at ${base} on ${date}; the rest follow within ${deliveryDays(type.id)} days.` : `Delivery to ${base} on ${date}.`, undefined, 'cash');
       setState({ modal: null, panel: 'fleet' });
     }
   };

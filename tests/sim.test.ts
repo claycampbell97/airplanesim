@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { acquireAircraft, deliveryDays, openRoute, setRotation } from '../src/sim/actions';
+import { suggestRoutes } from '../src/sim/planner';
 import { Sim } from '../src/sim/sim';
 import { ledgerCost, ledgerProfit, ledgerRevenue } from '../src/sim/finance';
 import type { Livery } from '../src/sim/types';
@@ -70,5 +72,38 @@ describe('simulation', () => {
     for (let i = 0; i < sim.game.airlines.length; i++) {
       expect(copy.game.airlines[i].cash).toBeCloseTo(sim.game.airlines[i].cash, 0);
     }
+  });
+
+  it('gets a new airline flying within the first week', () => {
+    const sim = Sim.create({ name: 'Test Air', code: 'TA', hq: 'MAN', livery: LIVERY, difficulty: 'standard', seed: 5 });
+    const p = sim.player;
+    const plan = suggestRoutes(sim, p, p.hq, 'a20n', 1)[0];
+    expect(plan).toBeDefined();
+    const route = openRoute(sim, 0, plan.a, plan.b);
+    expect(route.ok).toBe(true);
+    // The first aircraft comes out of the lessor's stock; later ones wait for the factory.
+    const first = acquireAircraft(sim, 0, 'a20n', { lease: true });
+    const second = acquireAircraft(sim, 0, 'a20n', { lease: true });
+    expect(first.ok && second.ok).toBe(true);
+    if (!first.ok || !second.ok || !route.ok) return;
+    expect(first.value.deliver - sim.game.time).toBe(3 * 1440);
+    expect(second.value.deliver - sim.game.time).toBe(deliveryDays('a20n') * 1440);
+    setRotation(sim, sim.fleetOf(0)[0].id, [route.value.id]);
+    for (let d = 0; d < 7; d++) sim.advance(1440);
+    expect(p.totalFlights).toBeGreaterThan(0);
+    expect(p.totalPax).toBeGreaterThan(0);
+  });
+
+  it('lapses an unanswered decision on its stated day', () => {
+    const sim = Sim.create({ name: 'Test Air', code: 'TA', hq: 'MAN', livery: LIVERY, difficulty: 'standard', seed: 5 });
+    const g = sim.game;
+    g.decisions.push({
+      id: g.nextId++, expires: g.time + 2 * 1440, type: 'endorsement', title: 'Test', body: 'Test',
+      options: [{ label: 'Yes', detail: '' }, { label: 'No', detail: '' }], data: {},
+    });
+    sim.advance(1440);
+    expect(g.decisions.length).toBe(1);
+    for (let d = 0; d < 2; d++) sim.advance(1440);
+    expect(g.decisions.length).toBe(0);
   });
 });

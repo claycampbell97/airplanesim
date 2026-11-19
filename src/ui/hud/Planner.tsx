@@ -9,7 +9,7 @@ import { leaseCapacity, leaseCommitment } from '../../sim/finance';
 import { OTHER_AIRLINES } from '../../sim/market';
 import { planRoute, suggestRoutes } from '../../sim/planner';
 import { formatDate } from '../../sim/time';
-import { deliveryDays } from '../../sim/actions';
+import { deliveryDaysFor } from '../../sim/actions';
 import { attempt } from '../app/act';
 import { duration, integer, km, money, percent, signedMoney, sum3 } from '../app/format';
 import { cancelPlan, game, refresh, showRoute, toast, updatePlan, useApp, useSim } from '../app/store';
@@ -52,6 +52,7 @@ export function Planner() {
     } else if (mode === 'idle') {
       for (const ac of idle.slice(0, count)) attempt(setRotation(sim, ac.id, [route.id]), undefined, null);
     } else if (mode === 'lease') {
+      const days = deliveryDaysFor(sim, p, plan.type);
       let done = 0;
       for (let i = 0; i < count; i++) {
         const res = acquireAircraft(sim, 0, plan.type, { lease: true, base: plan.from });
@@ -60,7 +61,7 @@ export function Planner() {
         setRotation(sim, ac.id, [route.id]);
         done++;
       }
-      if (done) toast('good', `${done} × ${typeName(type)} leased for ${route.a}–${route.b}`, `Flying starts on delivery, ${formatDate(sim.game.time + deliveryDays(plan.type) * 1440)}.`, undefined, null);
+      if (done) toast('good', `${done} × ${typeName(type)} leased for ${route.a}–${route.b}`, `Flying starts on delivery, ${formatDate(sim.game.time + days * 1440)}.`, undefined, null);
     }
     game.globe?.invalidate();
     refresh();

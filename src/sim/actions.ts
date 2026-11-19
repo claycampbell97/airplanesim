@@ -72,6 +72,16 @@ export function deliveryDays(typeId: string): number {
   return c === 'turboprop' || c === 'regional' ? 10 : c === 'narrowbody' ? 16 : 28;
 }
 
+/**
+ * Delivery time for this airline right now. A new airline's very first aircraft
+ * comes out of the lessor's stock within days, so that the game opens with
+ * flying rather than with waiting.
+ */
+export function deliveryDaysFor(sim: Sim, al: Airline, typeId: string): number {
+  const days = deliveryDays(typeId);
+  return al.isPlayer && al.totalFlights === 0 && sim.fleetOf(al.id).length === 0 ? Math.min(3, days) : days;
+}
+
 /** Manufacturer discount currently on offer to the player for a type (0 if none). */
 export function activeDiscount(sim: Sim, typeId: string): number {
   return sim.game.time < (sim.game.flags[`discount:${typeId}`] ?? 0) ? 0.12 : 0;
@@ -119,7 +129,7 @@ export function acquireAircraft(sim: Sim, airlineId: number, typeId: string, opt
     if (!type.inProduction) return fail('This type is out of production — look for one on the second-hand market');
     price = newPrice(sim, typeId, al);
     lease = newLease(sim, typeId, al);
-    days = deliveryDays(typeId);
+    days = deliveryDaysFor(sim, al, typeId);
   }
 
   if (opts.lease) {
