@@ -123,7 +123,7 @@ export class Sim {
       hubs: [{ airport: opts.hq, level: 2, opened: 0 }],
       cash: tuning.startCash, loans: [], hedges: [],
       policy: { service: 3, ancillary: 1, maintenance: 3, wages: 1, marketing: 100_000 },
-      reputation: 38, morale: 62, otp: 0.85, otpDay: 0.85,
+      reputation: 38, repDay: 38, morale: 62, otp: 0.85, otpDay: 0.85,
       today: emptyLedger(), month: emptyLedger(), history: [], daily: [],
       totalPax: 0, totalFlights: 0, bankrupt: false, insolventDays: 0,
       nextFlightNo: 101, nextReg: 1, founded: 0,
@@ -168,20 +168,26 @@ export class Sim {
   }
 
   serialize(): string {
-    return JSON.stringify(this.game);
+    // Work that is waiting for the next tick is part of the state.
+    return JSON.stringify({ ...this.game, pending: [...this.dirtyAirlines] });
   }
 
   static load(json: string): Sim {
     const game = JSON.parse(json) as Game;
     if (!game || typeof game !== 'object' || !Array.isArray(game.airlines)) throw new Error('Not a save file');
     if (game.version !== SAVE_VERSION) throw new Error(`Save file is from an incompatible version (${game.version})`);
+    const pending = game.pending ?? [];
+    delete game.pending;
     const sim = new Sim(game);
+    for (const id of pending) sim.dirtyAirlines.add(id);
     sim.adopt();
     return sim;
   }
 
-  /** Brings a save from before slots existed up to date: what was already flying keeps its slots. */
+  /** Brings a save from an earlier version up to date. */
   private adopt(): void {
+    for (const al of this.game.airlines) al.repDay ??= al.reputation;
+    // From before slots existed: what was already flying keeps its slots.
     const p = this.player;
     if (p.slots) return;
     p.slots = {};
@@ -378,7 +384,8 @@ export class Sim {
     }
 
     const month = monthIndex(g.time);
-    if (month !== g.month) {
+    const monthEnded = month !== g.month;
+    if (monthEnded) {
       g.month = month;
       this.endOfMonth();
     }
@@ -401,6 +408,8 @@ export class Sim {
       this.emit('objective', o);
     }
     this.nextScan = 0;
+    // Announced only once the day's work is done, so that a save made on hearing it holds a finished day.
+    if (monthEnded) this.emit('month', g.month);
     this.emit('day', g.day);
   }
 
@@ -442,6 +451,7 @@ export class Sim {
     for (const r of this.routesOf(al.id)) r.maturity = Math.min(1, r.maturity + 1 / 75);
 
     al.otpDay = al.otp;
+    al.repDay = al.reputation;
     al.daily.push({ day: g.day, cash: al.cash, profit, pax: al.today.pax });
     const keep = al.isPlayer ? 420 : 60;
     if (al.daily.length > keep) al.daily.splice(0, al.daily.length - keep);
@@ -509,7 +519,6 @@ export class Sim {
       ac.monthProfit = 0;
     }
     spawnDecisions(this);
-    this.emit('month', g.month);
   }
 
   resolveDecision(id: number, option: number): void {

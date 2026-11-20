@@ -164,6 +164,8 @@ export function wake(sim: Sim, ac: Aircraft, t = sim.game.time): void {
   ac.phase = 'turnaround';
   ac.next = t + 45;
   ac.note = 'Preparing for service';
+  // The fleet scan may be asleep until some later event: have it look in time.
+  if (ac.next < sim.nextScan) sim.nextScan = ac.next;
 }
 
 function arrive(sim: Sim, ac: Aircraft, t: number): void {

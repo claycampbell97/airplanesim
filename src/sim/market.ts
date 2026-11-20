@@ -11,7 +11,7 @@
 import { AIRCRAFT_TYPE } from './data/aircraft';
 import { AIRPORT, AIRPORTS, airportDistance, pairIndex } from './data/airports';
 import { baseDemand, classSplit, expectedBoarded, frequencyCapture, leisureScore, businessScore, priceResponse, refFare, REGION_GROWTH, seasonOf } from './demand';
-import { yearFraction, yearsElapsed } from './time';
+import { MIN_PER_DAY, dayIndex, yearFraction, yearsElapsed } from './time';
 import type { Aircraft, AircraftCategory, Airline, AirportId, RegionId, Route, Triple } from './types';
 import type { Sim } from './sim';
 
@@ -151,8 +151,11 @@ function applyTimeFactor(sim: Sim, m: Market): void {
 export function refreshWorldFactors(sim: Sim): void {
   const g = sim.game;
   sim.factorStamp += 1;
-  const yf = yearFraction(g.time);
-  sim.years = yearsElapsed(g.time);
+  // Always as of the start of the day, whatever the hour: a game loaded at noon then
+  // sees exactly the day that one played through to noon does.
+  const t = dayIndex(g.time) * MIN_PER_DAY;
+  const yf = yearFraction(t);
+  sim.years = yearsElapsed(t);
   for (const region of Object.keys(REGION_GROWTH) as RegionId[]) {
     sim.growth[region] = Math.exp(REGION_GROWTH[region] * sim.years);
   }
@@ -162,7 +165,7 @@ export function refreshWorldFactors(sim: Sim): void {
     sim.disruption[a.index] = 0;
   }
   for (const e of g.world.events) {
-    if (g.time < e.start || g.time >= e.end) continue;
+    if (t < e.start || t >= e.end) continue;
     for (const a of AIRPORTS) {
       if (e.airport ? a.id === e.airport : e.region ? a.region === e.region : true) {
         // A pair touches two airports, so world/region events apply their square root at each end.
@@ -262,7 +265,7 @@ export function cabinComfort(sim: Sim, ac: Aircraft): number {
 
 export function airlineQualityBase(al: Airline): number {
   const service = (al.policy.service - 1) / 4;
-  const rep = al.reputation / 100;
+  const rep = al.repDay / 100;
   const otp = Math.max(0, Math.min(1, (al.otpDay - 0.6) / 0.35));
   return 0.35 * service + 0.25 * rep + 0.15 * otp - ANCILLARY_PENALTY[al.policy.ancillary];
 }

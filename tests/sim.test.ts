@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { acquireAircraft, deliveryDays, openRoute, setFareMode, setPrice, setRotation } from '../src/sim/actions';
+import { acquireAircraft, buyHedge, closeRoute, deliveryDays, developHub, launchPromo, openRoute, setAutoFares, setFareMode, setPolicy, setPrice, setRotation } from '../src/sim/actions';
 import { AIRPORTS, pairIndex } from '../src/sim/data/airports';
 import { expectedBoarded } from '../src/sim/demand';
 import { buySlots, homeSlots, sellSlot, slotsHeld, slotsUsed } from '../src/sim/slots';
@@ -7,7 +7,7 @@ import { AIRCRAFT_TYPE } from '../src/sim/data/aircraft';
 import { blockMinutes, getMarket, legsPerDay, MAX_BLOCK_HOURS } from '../src/sim/market';
 import { suggestRoutes } from '../src/sim/planner';
 import { Sim } from '../src/sim/sim';
-import { ledgerCost, ledgerProfit, ledgerRevenue } from '../src/sim/finance';
+import { ledgerCost, ledgerProfit, ledgerRevenue, takeLoan } from '../src/sim/finance';
 import type { Livery } from '../src/sim/types';
 
 const pairKeyOf = (r: { a: string; b: string }) => pairIndex(r.a, r.b);
@@ -50,6 +50,22 @@ function report(sim: Sim, label: string) {
       `${al.name.padEnd(24)} ${String(sim.fleetOf(al.id).length).padStart(5)} ${String(sim.routesOf(al.id).length).padStart(6)} ${(al.cash / 1e6).toFixed(0).padStart(8)} ${(rev / 1e6).toFixed(1).padStart(9)} ${(((rev - cost) / Math.max(1, rev)) * 100).toFixed(1).padStart(6)}% ${(ask ? (rpk / ask) * 100 : 0).toFixed(0).padStart(4)}% ${(rpk ? (rev * h.length / rpk) * 100 : 0).toFixed(1).padStart(6)} ${al.reputation.toFixed(0).padStart(4)} ${(al.otp * 100).toFixed(0).padStart(4)}`,
     );
   }
+}
+
+/** Where two games first differ: '' when they are the same to the last digit. */
+function difference(x: Sim, y: Sim): string {
+  const a = x.serialize();
+  const b = y.serialize();
+  if (a === b) return '';
+  const out: string[] = [];
+  const walk = (u: any, v: any, path: string) => {
+    if (out.length >= 8 || u === v) return;
+    if (u && v && typeof u === 'object' && typeof v === 'object') {
+      for (const k of new Set([...Object.keys(u), ...Object.keys(v)])) walk(u[k], v[k], `${path}.${k}`);
+    } else out.push(`${path}: ${JSON.stringify(u)} vs ${JSON.stringify(v)}`);
+  };
+  walk(JSON.parse(a), JSON.parse(b), 'game');
+  return out.join('; ');
 }
 
 describe('simulation', () => {
@@ -107,9 +123,99 @@ describe('simulation', () => {
     expect(copy.game.time).toBe(sim.game.time);
     expect(copy.game.aircraft.length).toBe(sim.game.aircraft.length);
     // Deterministic: the reloaded world evolves identically.
-    for (let i = 0; i < sim.game.airlines.length; i++) {
-      expect(copy.game.airlines[i].cash).toBeCloseTo(sim.game.airlines[i].cash, 0);
+    expect(difference(sim, copy)).toBe('');
+  });
+
+  it('replays exactly from a save, whatever was done just before it', { timeout: 180_000 }, () => {
+    const sim = Sim.create({ name: 'Test Air', code: 'TA', hq: 'MAN', livery: LIVERY, difficulty: 'standard', seed: 21 });
+    sim.player.cash += 4e8;
+    const fly = (s: Sim, dest: string, type: string) => {
+      const r = openRoute(s, 0, 'MAN', dest);
+      if (!r.ok || !acquireAircraft(s, 0, type, { lease: true }).ok) return;
+      const fleet = s.fleetOf(0);
+      setRotation(s, fleet[fleet.length - 1].id, [r.value.id]);
+    };
+    const answer = (s: Sim) => { for (const d of [...s.game.decisions]) s.resolveDecision(d.id, 0); };
+    for (const [dest, type] of [['DUB', 'at76'], ['AMS', 'a20n'], ['BCN', 'a20n'], ['EDI', 'at76'], ['JFK', 'a21n']]) fly(sim, dest, type);
+    for (let d = 0; d < 45; d++) sim.advance(1440);
+    // The middle of an afternoon, with aircraft in the air and a decision or two waiting.
+    sim.advance(517);
+    expect(sim.fleetOf(0).some((a) => a.phase === 'enroute')).toBe(true);
+
+    // Earlier in the day a rival on one of these routes, and one of ours, ran hours late:
+    // reputations have moved since midnight.
+    const shared = sim.routesOf(0).map((r) => getMarket(sim, r.a, r.b).routes.find((x) => x.airline !== 0)).find((x) => x)!;
+    expect(shared).toBeDefined();
+    sim.onLongDelay(sim.fleetOf(shared.airline)[0], 300);
+    sim.onLongDelay(sim.fleetOf(0)[0], 300);
+
+    // A burst of moves, then a save before the clock has run another minute.
+    const burst = (s: Sim) => {
+      const routes = s.routesOf(0);
+      const fleet = s.fleetOf(0);
+      fly(s, 'CDG', 'a20n');
+      setFareMode(s, routes[0].id, false);
+      setPrice(s, routes[0].id, [routes[0].price[0] * 1.1, routes[0].price[1], routes[0].price[2] * 0.9]);
+      launchPromo(s, routes[1].id);
+      developHub(s, 0, 'DUB');
+      buyHedge(s, 0, 0.4, 6);
+      takeLoan(s, s.player, 15e6, 36);
+      setRotation(s, fleet[2].id, [routes[1].id, routes[2].id]);
+      answer(s);
+    };
+    burst(sim);
+    const copy = Sim.load(sim.serialize());
+    expect(difference(sim, copy)).toBe('');
+    for (let h = 0; h < 6; h++) {
+      sim.advance(60); copy.advance(60);
+      expect(difference(sim, copy)).toBe('');
     }
+
+    // The same moves made in both games land the same way: first ones that stir every
+    // market we fly in, rivals' offers and all, then the rest.
+    const reprice = (s: Sim) => {
+      for (const r of s.routesOf(0)) setPrice(s, r.id, [r.price[0] + 2, r.price[1], r.price[2]]);
+    };
+    reprice(sim); reprice(copy);
+    expect(difference(sim, copy)).toBe('');
+    const later = (s: Sim) => {
+      const routes = s.routesOf(0);
+      const fleet = s.fleetOf(0);
+      closeRoute(s, routes[3].id);
+      setRotation(s, fleet[3].id, [routes[0].id]);
+      setAutoFares(s, 0, false);
+      setAutoFares(s, 0, true);
+      buySlots(s, 0, 'AMS', 2);
+      fly(s, 'LHR', 'a20n');
+      setPolicy(s, 0, { service: 4, ancillary: 2, marketing: 250_000 });
+    };
+    later(sim); later(copy);
+    expect(difference(sim, copy)).toBe('');
+    // Through a month end, answering whatever comes up in the same way in both.
+    for (let d = 0; d < 36; d++) {
+      sim.advance(1440); copy.advance(1440);
+      answer(sim); answer(copy);
+      expect(difference(sim, copy)).toBe('');
+    }
+    expect(sim.player.totalFlights).toBeGreaterThan(1500);
+  });
+
+  it('finishes the day before announcing the end of a month, so that an autosave holds a whole day', { timeout: 120_000 }, () => {
+    const sim = Sim.create({ name: 'Test Air', code: 'TA', hq: 'MAN', livery: LIVERY, difficulty: 'standard', seed: 8 });
+    const plan = suggestRoutes(sim, sim.player, 'MAN', 'a20n', 1)[0];
+    const route = openRoute(sim, 0, plan.a, plan.b);
+    expect(route.ok && acquireAircraft(sim, 0, 'a20n', { lease: true }).ok).toBe(true);
+    if (route.ok) setRotation(sim, sim.fleetOf(0)[0].id, [route.value.id]);
+    // What the interface does: save on hearing that a month has ended.
+    const saves: string[] = [];
+    sim.on('month', () => saves.push(sim.serialize()));
+    while (saves.length < 2) sim.advance(1440);
+    const copy = Sim.load(saves[1]);
+    expect(copy.game.time % 1440).toBe(0);
+    copy.advance(sim.game.time - copy.game.time);
+    expect(difference(sim, copy)).toBe('');
+    for (let d = 0; d < 8; d++) { sim.advance(1440); copy.advance(1440); }
+    expect(difference(sim, copy)).toBe('');
   });
 
   it('gets a new airline flying within the first week', () => {

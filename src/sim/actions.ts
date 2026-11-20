@@ -268,6 +268,7 @@ export function reconfigureCabin(sim: Sim, acId: number, cabin: Triple, density:
   ac.phase = 'maintenance';
   ac.note = 'Cabin refit';
   ac.next = sim.game.time + 3 * 1440;
+  if (ac.next < sim.nextScan) sim.nextScan = ac.next;
   for (const rid of ac.rotation) {
     const r = sim.routeById.get(rid);
     if (r) routeChanged(sim, r);

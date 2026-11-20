@@ -221,6 +221,8 @@ export interface Airline {
   policy: Policy;
   /** 0..100 brand reputation. */
   reputation: number;
+  /** Reputation as of the last midnight: what passengers choose by today. */
+  repDay: number;
   /** 0..100 staff morale. */
   morale: number;
   /** Rolling on-time performance, 0..1. */
@@ -474,6 +476,8 @@ export interface Game {
   /** Tutorial progress flags. */
   flags: Record<string, number>;
   over: boolean;
+  /** In a save file only: airlines whose connecting traffic is due a refresh at the next tick. */
+  pending?: number[];
 }
 
 export const PLAYER = 0;

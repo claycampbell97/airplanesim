@@ -175,6 +175,7 @@ export function createRival(sim: Sim, tpl: AirlineTemplate, id: number): Airline
     policy: { service: st.service, ancillary: st.ancillary, maintenance: 3, wages: st.wages, marketing: size * 22_000 },
     reputation: st.reputation + randRange(g, -5, 5),
     morale: 60,
+    repDay: 0,
     otp: 0.82,
     otpDay: 0.82,
     today: emptyLedger(), month: emptyLedger(), history: [], daily: [],
@@ -184,6 +185,7 @@ export function createRival(sim: Sim, tpl: AirlineTemplate, id: number): Airline
     nextReg: randInt(g, 0, 400),
     founded: g.time - randInt(g, 8, 60) * 525960,
   };
+  al.repDay = al.reputation;
   return al;
 }
 
