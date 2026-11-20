@@ -342,6 +342,18 @@ export function defaultPreset(type: AircraftType): CabinPreset {
   return CABIN_PRESETS.find((p) => p.id === id)!;
 }
 
+/**
+ * Share of an aircraft's brochure range an airline can plan a route on: reserves,
+ * headwinds and a full cabin take the rest. It is why an A320neo, good for 6,300 km
+ * on paper, does not fly from London to New York.
+ */
+export const RANGE_MARGIN = 0.85;
+
+/** The longest route an aircraft type can be scheduled on, km. */
+export function usableRange(typeId: string): number {
+  return Math.round(AIRCRAFT_TYPE[typeId].range * RANGE_MARGIN);
+}
+
 export function totalSeats(cabin: Triple): number {
   return cabin[0] + cabin[1] + cabin[2];
 }

@@ -11,7 +11,7 @@ import type { Cue } from '../../audio/audio';
 import type { GlobeHit, GlobeRenderer, Quality, SunMode } from '../../render/GlobeRenderer';
 import type { RouteColorMode } from '../../render/layers';
 import { AIRPORT, airportDistance } from '../../sim/data/airports';
-import { AIRCRAFT_TYPE } from '../../sim/data/aircraft';
+import { AIRCRAFT_TYPE, usableRange } from '../../sim/data/aircraft';
 import { baseDemand } from '../../sim/demand';
 import * as actions from '../../sim/actions';
 import { canOperate } from '../../sim/ops';
@@ -441,7 +441,7 @@ function planCandidates(from: AirportId, type: string): Map<AirportId, number> {
   const list: [AirportId, number][] = [];
   for (const id of Object.keys(AIRPORT)) {
     if (id === from) continue;
-    if (!canOperate(type, from, id).ok || airportDistance(from, id) > t.range) continue;
+    if (!canOperate(type, from, id).ok) continue;
     const d = baseDemand(from, id);
     if (d < 20) continue;
     list.push([id, d]);
@@ -464,7 +464,7 @@ function syncPlan(plan: Plan | null): void {
   globe.setPlanning({
     from: plan.from,
     to,
-    rangeKm: AIRCRAFT_TYPE[plan.type].range,
+    rangeKm: usableRange(plan.type),
     ok: to ? canOperate(plan.type, plan.from, to).ok : true,
     candidates: planCandidatesCached(plan.from, plan.type),
   });
@@ -487,7 +487,7 @@ export function startPlan(from: AirportId, type: string, aircraft: number | null
   game.globe?.setSelection({ airport: null, route: null, aircraft: null });
   syncPlan(plan);
   const a = AIRPORT[from];
-  const range = AIRCRAFT_TYPE[type].range / 6371;
+  const range = usableRange(type) / 6371;
   game.globe?.controls.flyTo({ lat: a.lat, lon: a.lon, altitude: Math.max(0.9, Math.min(3.6, range * 1.5)) }, 1.4);
 }
 

@@ -35,6 +35,12 @@ export interface Market {
    * already has service; newcomers have to win passengers from it.
    */
   others: OfferInput;
+  /**
+   * Changing planes somewhere on other airlines: slower than a non-stop, but on
+   * anything longer than a short hop it is always there, and it keeps a route that
+   * nobody else flies from being a licence to print money.
+   */
+  via: OfferInput;
   /** World-factor generation this market's demand was last computed for. */
   stamp: number;
 }
@@ -62,6 +68,14 @@ const OTHERS_SEATS = 165;
 const OTHERS_QUALITY = 0.45;
 /** Airline id used for the incumbents in competitor lists. */
 export const OTHER_AIRLINES = -1;
+/** ...and for journeys with a change of planes on other airlines. */
+export const VIA_HUBS = -2;
+/** A change of planes is worth this many daily non-stops in passengers' eyes, at this quality and price. */
+const VIA_FREQUENCY = 1.5;
+const VIA_QUALITY = 0.2;
+const VIA_PRICE = 0.95;
+/** Connections can carry this share of a market's demand between them. */
+const VIA_CAPACITY = 0.6;
 
 /** How strongly premium passengers switch airline over price (economy depends on the market, see below). */
 const PRICE_SENSITIVITY: Triple = [2.6, 1.6, 1.1];
@@ -98,6 +112,7 @@ export function getMarket(sim: Sim, a: AirportId, b: AirportId): Market {
       business: businessScore(A, B),
       routes: [],
       others: { freq: 0, seats: [0, 0, 0], price: [0, 0, 0], quality: OTHERS_QUALITY, boost: 1 },
+      via: { freq: 0, seats: [0, 0, 0], price: [0, 0, 0], quality: VIA_QUALITY, boost: 1 },
       stamp: -1,
     };
     sim.markets.set(key, m);
@@ -144,6 +159,38 @@ function applyTimeFactor(sim: Sim, m: Market): void {
   for (let c = 0; c < 3; c++) {
     o.seats[c] = o.freq > 0 ? (m.demand[c] * OTHERS_CAPACITY[c] * scarce * presence) / o.freq : 0;
     o.price[c] = m.ref[c] * premium;
+  }
+
+  // One-stop journeys: not worth it on a short hop, a real alternative on a long one.
+  const v = m.via;
+  v.freq = VIA_FREQUENCY * viaStrength(m.dist);
+  for (let c = 0; c < 3; c++) {
+    v.seats[c] = v.freq > 0 ? (m.demand[c] * VIA_CAPACITY) / v.freq : 0;
+    v.price[c] = m.ref[c] * VIA_PRICE;
+  }
+}
+
+/** 0..1: how real an alternative a change of planes is on a route of this length. */
+export function viaStrength(dist: number): number {
+  const t = Math.max(0, Math.min(1, (dist - 900) / 1600));
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * How well an aircraft suits the length of a flight, as passengers see it: hours in
+ * a turboprop, or an ocean crossing in a single-aisle cabin, cost an airline custom.
+ * Added to the quality of the service.
+ */
+export function sectorFit(typeId: string, dist: number): number {
+  const ramp = (lo: number, hi: number) => {
+    const t = Math.max(0, Math.min(1, (dist - lo) / (hi - lo)));
+    return t * t * (3 - 2 * t);
+  };
+  switch (AIRCRAFT_TYPE[typeId].category) {
+    case 'turboprop': return -0.35 * ramp(350, 1000);
+    case 'regional': return -0.15 * ramp(1800, 3500);
+    case 'narrowbody': return -0.15 * ramp(4500, 7500);
+    default: return 0;
   }
 }
 
@@ -274,6 +321,7 @@ export function computeOffer(sim: Sim, route: Route): Offer {
   const al = sim.game.airlines[route.airline];
   let freq = 0;
   let comfort = 0;
+  let fit = 0;
   const seats: Triple = [0, 0, 0];
   for (const id of route.aircraft) {
     const ac = sim.acById.get(id);
@@ -281,16 +329,17 @@ export function computeOffer(sim: Sim, route: Route): Offer {
     const f = rotationFrequency(sim, ac);
     freq += f;
     comfort += f * cabinComfort(sim, ac);
+    fit += f * sectorFit(ac.type, route.dist);
     seats[0] += f * ac.cabin[0];
     seats[1] += f * ac.cabin[1];
     seats[2] += f * ac.cabin[2];
   }
   if (freq > 0) {
     comfort /= freq;
+    fit /= freq;
     seats[0] /= freq; seats[1] /= freq; seats[2] /= freq;
   }
-  const quality = Math.max(0, Math.min(1, airlineQualityBase(al) + 0.25 * comfort));
-  return { freq, seats, quality };
+  return { freq, seats, quality: serviceQuality(al, comfort, fit) };
 }
 
 export function offerOf(sim: Sim, route: Route): Offer {
@@ -383,7 +432,7 @@ export function marketInputs(sim: Sim, m: Market): OfferInput[] {
     const o = offerOf(sim, r);
     inputs.push({ freq: o.freq, seats: o.seats, price: r.price, quality: o.quality, boost: routeBoost(sim, r) });
   }
-  inputs.push(m.others);
+  inputs.push(m.others, m.via);
   return inputs;
 }
 
@@ -639,9 +688,12 @@ export function refreshAllMarkets(sim: Sim, everything = false): void {
 
 // ───────────────────────── Planning estimates ─────────────────────────
 
-/** Product quality passengers would perceive on a service with the given cabin comfort. */
-export function serviceQuality(al: Airline, comfort: number): number {
-  return Math.max(0, Math.min(1, airlineQualityBase(al) + 0.25 * comfort));
+/**
+ * Product quality passengers would perceive on a service with the given cabin
+ * comfort, on aircraft that suit the length of the flight by `fit` (see sectorFit).
+ */
+export function serviceQuality(al: Airline, comfort: number, fit = 0): number {
+  return Math.max(0, Math.min(1, airlineQualityBase(al) + 0.25 * comfort + fit));
 }
 
 /**
@@ -656,7 +708,7 @@ export function serviceInputs(sim: Sim, al: Airline, m: Market, mine: OfferInput
     const o = offerOf(sim, r);
     inputs.push({ freq: o.freq, seats: o.seats, price: r.price, quality: o.quality, boost: routeBoost(sim, r) });
   }
-  inputs.push(m.others);
+  inputs.push(m.others, m.via);
   inputs.push(mine);
   return inputs;
 }
@@ -676,8 +728,13 @@ export interface RouteEstimate {
   connFare: Triple;
   seats: Triple;
   loadFactor: number;
-  competitors: { airline: number; freq: number; price: Triple; seats: Triple }[];
-  /** Expected share of local economy demand. */
+  /**
+   * Who else carries this market, with the passengers a day each way they would be
+   * left with: rival airlines, OTHER_AIRLINES for the rest, VIA_HUBS for journeys
+   * with a change of planes.
+   */
+  competitors: { airline: number; freq: number; price: Triple; seats: Triple; pax: number }[];
+  /** Expected share of the passengers travelling, all cabins. */
   share: number;
 }
 
@@ -705,18 +762,23 @@ export function estimateService(
 ): RouteEstimate {
   const m = getMarket(sim, a, b);
   const freq = aircraftCount > 0 ? dailyRoundTrips(typeId, m.dist) * aircraftCount : 0;
-  const quality = serviceQuality(al, comfort);
-  const competitors: RouteEstimate['competitors'] = [];
-  for (const r of m.routes) {
-    if (r === existing || (r.airline === al.id && !existing)) continue;
-    const o = offerOf(sim, r);
-    if (o.freq > 0) competitors.push({ airline: r.airline, freq: o.freq, price: r.price, seats: o.seats });
-  }
-  if (m.others.freq > 0) competitors.push({ airline: OTHER_AIRLINES, freq: m.others.freq, price: m.others.price, seats: m.others.seats });
+  const quality = serviceQuality(al, comfort, sectorFit(typeId, m.dist));
   const inputs = serviceInputs(sim, al, m, { freq, seats: cabin, price, quality, boost }, existing);
   if (rival) inputs.splice(inputs.length - 1, 0, rival);
   const split = splitMarket(m, inputs);
   const mine = split[split.length - 1];
+  // The same order as serviceInputs: the other routes on the pair, the incumbents, connections.
+  const competitors: RouteEstimate['competitors'] = [];
+  const carried = (i: number) => Math.min(split[i][0], inputs[i].freq * inputs[i].seats[0]) + Math.min(split[i][1], inputs[i].freq * inputs[i].seats[1]) + Math.min(split[i][2], inputs[i].freq * inputs[i].seats[2]);
+  let at = 0;
+  for (const r of m.routes) {
+    if (r === existing || (r.airline === al.id && !existing)) continue;
+    const o = offerOf(sim, r);
+    if (o.freq > 0) competitors.push({ airline: r.airline, freq: o.freq, price: r.price, seats: o.seats, pax: carried(at) });
+    at += 1;
+  }
+  if (m.others.freq > 0) competitors.push({ airline: OTHER_AIRLINES, freq: m.others.freq, price: m.others.price, seats: m.others.seats, pax: carried(at) });
+  if (m.via.freq > 0) competitors.push({ airline: VIA_HUBS, freq: m.via.freq, price: m.via.price, seats: m.via.seats, pax: carried(at + 1) });
 
   // Whichever end is a hub feeds connections (both ends, if both are hubs).
   const connPax: Triple = [0, 0, 0];
@@ -745,8 +807,8 @@ export function estimateService(
     seatsTotal += cabin[c];
     paxTotal += pax[c];
   }
-  let totalY = 0;
-  for (const s of split) totalY += s[0];
+  let everyone = 0;
+  for (let i = 0; i < split.length; i++) everyone += carried(i);
   return {
     dist: m.dist,
     blockMinutes: blockMinutes(typeId, m.dist),
@@ -759,6 +821,6 @@ export function estimateService(
     seats: cabin,
     loadFactor: seatsTotal > 0 ? paxTotal / seatsTotal : 0,
     competitors,
-    share: totalY > 0 ? mine[0] / totalY : 0,
+    share: everyone > 0 ? carried(split.length - 1) / everyone : 0,
   };
 }

@@ -1,6 +1,6 @@
 // Flight operations: the aircraft state machine and the economics of each flight.
 
-import { AIRCRAFT_TYPE, totalSeats } from './data/aircraft';
+import { AIRCRAFT_TYPE, totalSeats, usableRange } from './data/aircraft';
 import { AIRPORT, airportDistance } from './data/airports';
 import { BOOKING_SWING } from './demand';
 import { earn, feeFactor, fuelPriceFor, hubDiscount, labourFactor, ownershipPerDay, spend } from './finance';
@@ -475,7 +475,8 @@ export function planFlight(
 export function canOperate(typeId: string, a: AirportId, b: AirportId): { ok: boolean; reason?: string } {
   const t = AIRCRAFT_TYPE[typeId];
   const dist = airportDistance(a, b);
-  if (dist > t.range) return { ok: false, reason: `Out of range (${Math.round(dist).toLocaleString()} km, max ${t.range.toLocaleString()} km)` };
+  const range = usableRange(typeId);
+  if (dist > range) return { ok: false, reason: `Out of range (${Math.round(dist).toLocaleString()} km, and it can be scheduled on up to ${range.toLocaleString()} km)` };
   for (const id of [a, b]) {
     const ap = AIRPORT[id];
     if (ap.effRunway < t.runway) {

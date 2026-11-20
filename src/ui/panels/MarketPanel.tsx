@@ -3,9 +3,7 @@
 import { useState } from 'react';
 import { Store } from 'lucide-react';
 import { activeDiscount, deliveryDaysFor, newLease, newPrice } from '../../sim/actions';
-import {
-  AIRCRAFT_TYPE, AIRCRAFT_TYPES, CATEGORY_NAMES, defaultPreset, makeCabin, totalSeats, typeName,
-} from '../../sim/data/aircraft';
+import { AIRCRAFT_TYPE, AIRCRAFT_TYPES, CATEGORY_NAMES, defaultPreset, makeCabin, totalSeats, typeName, usableRange } from '../../sim/data/aircraft';
 import { leaseCapacity, leaseCommitment } from '../../sim/finance';
 import type { AircraftCategory, AircraftType } from '../../sim/types';
 import { integer, km, money } from '../app/format';
@@ -23,7 +21,7 @@ function Specs({ type }: { type: AircraftType }) {
     <dl className="kv small">
       <dt>Typical cabin</dt>
       <dd>{totalSeats(cabin)} seats <span className="dim">({cabin.filter((s) => s > 0).join(' + ')})</span></dd>
-      <dt>Range</dt><dd>{km(type.range)}</dd>
+      <dt>Range</dt><dd>{km(usableRange(type.id))} <span className="dim">with reserves ({km(type.range)} on paper)</span></dd>
       <dt>Cruise speed</dt><dd>{integer(type.speed)} km/h</dd>
       <dt>Runway needed</dt><dd>{integer(type.runway)} m</dd>
       <dt>Fuel burn</dt><dd>{type.fuelKm.toFixed(2)} kg/km <span className="dim">({((type.fuelKm / type.seats) * 100).toFixed(2)} per 100 seat-km)</span></dd>
@@ -67,7 +65,7 @@ export function MarketPanel() {
                   <span className="strong">{typeName(t)}</span>
                   {discount > 0 && <span className="badge good">−{Math.round(discount * 100)}%</span>}
                 </div>
-                <div className="small muted">{CATEGORY_NAMES[t.category]} · {t.seats} seats · {km(t.range)}</div>
+                <div className="small muted">{CATEGORY_NAMES[t.category]} · {t.seats} seats · {km(usableRange(t.id))}</div>
                 <div className="small"><span className="num">{money(newPrice(sim, t.id, p))}</span> <span className="dim">or {money(newLease(sim, t.id, p))}/mo</span></div>
               </button>
             );

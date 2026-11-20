@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { acquireAircraft, buyHedge, closeRoute, deliveryDays, developHub, launchPromo, openRoute, setAutoFares, setFareMode, setPolicy, setPrice, setRotation } from '../src/sim/actions';
 import { AIRPORTS, pairIndex } from '../src/sim/data/airports';
-import { expectedBoarded } from '../src/sim/demand';
+import { baseDemand, expectedBoarded } from '../src/sim/demand';
 import { buySlots, homeSlots, sellSlot, slotsHeld, slotsUsed } from '../src/sim/slots';
 import { AIRCRAFT_TYPE } from '../src/sim/data/aircraft';
-import { blockMinutes, getMarket, legsPerDay, MAX_BLOCK_HOURS } from '../src/sim/market';
-import { suggestRoutes } from '../src/sim/planner';
+import { blockMinutes, getMarket, legsPerDay, MAX_BLOCK_HOURS, sectorFit, VIA_HUBS } from '../src/sim/market';
+import { canOperate } from '../src/sim/ops';
+import { planRoute, suggestRoutes } from '../src/sim/planner';
 import { Sim } from '../src/sim/sim';
 import { ledgerCost, ledgerProfit, ledgerRevenue, takeLoan } from '../src/sim/finance';
 import type { Livery } from '../src/sim/types';
@@ -301,7 +302,7 @@ describe('simulation', () => {
     const p = sim.player;
     p.cash += 3e9;
     // Short, medium and long sectors.
-    const cases: [string, string][] = [['DUB', 'at76'], ['MAD', 'a20n'], ['DXB', 'a20n'], ['ORD', 'b789'], ['SIN', 'a359']];
+    const cases: [string, string][] = [['DUB', 'at76'], ['MAD', 'a20n'], ['TLV', 'a20n'], ['ORD', 'b789'], ['SIN', 'a359']];
     const flown = cases.map(([dest, type]) => {
       const route = openRoute(sim, 0, 'MAN', dest);
       const order = acquireAircraft(sim, 0, type, { lease: true });
@@ -325,6 +326,37 @@ describe('simulation', () => {
       expect(perDay).toBeGreaterThan(legsPerDay(sim, ac) * 0.88);
       expect(perDay).toBeLessThan(legsPerDay(sim, ac) * 1.08);
     });
+  });
+
+  it('fits aircraft to their missions and gives long routes a rival in the change of planes', () => {
+    const sim = Sim.create({ name: 'Test Air', code: 'TA', hq: 'MAN', livery: LIVERY, difficulty: 'standard', seed: 21 });
+    const p = sim.player;
+    // On paper an A320neo reaches New York from Manchester; with reserves into the wind it does not.
+    expect(AIRCRAFT_TYPE.a20n.range).toBeGreaterThan(getMarket(sim, 'MAN', 'JFK').dist);
+    expect(canOperate('a20n', 'MAN', 'JFK').ok).toBe(false);
+    expect(canOperate('a21n', 'MAN', 'JFK').ok).toBe(true);
+    // Nobody wants two and a half hours in a turboprop: its best routes are the short ones.
+    expect(sectorFit('at76', 300)).toBeCloseTo(0, 6);
+    expect(sectorFit('at76', 1000)).toBeLessThan(-0.3);
+    expect(sectorFit('a20n', 1000)).toBeCloseTo(0, 6);
+    const props = suggestRoutes(sim, p, 'MAN', 'at76', 5);
+    expect(props.length).toBeGreaterThan(0);
+    for (const plan of props) expect(plan.dist).toBeLessThan(800);
+    // A jet from Manchester earns its keep on the big markets of the Mediterranean and the capitals nearby.
+    const jets = suggestRoutes(sim, p, 'MAN', 'a20n', 6);
+    for (const plan of jets) {
+      expect(plan.dist).toBeLessThan(3600);
+      expect(baseDemand(plan.a, plan.b)).toBeGreaterThan(400);
+    }
+    // A short hop has no connecting rival; a long thin route always has one, however alone you are on it.
+    expect(getMarket(sim, 'MAN', 'DUB').via.freq).toBe(0);
+    const thin = getMarket(sim, 'MAN', 'JNB');
+    expect(thin.via.freq).toBeGreaterThan(1);
+    const alone = planRoute(sim, p, 'MAN', 'JNB', 'b789');
+    expect(alone.estimate.competitors.some((c) => c.airline === VIA_HUBS && c.pax > 0)).toBe(true);
+    expect(alone.estimate.share).toBeLessThan(0.9);
+    // ...which keeps the fare on it within sight of the going rate.
+    expect(alone.price[0]).toBeLessThan(alone.estimate.ref[0] * 1.5);
   });
 
   it('rations departures at slot-limited airports', () => {

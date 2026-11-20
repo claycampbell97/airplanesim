@@ -5,13 +5,13 @@ import { ArrowLeft, Megaphone, Plus, RefreshCw, Trash2, Waypoints, X } from 'luc
 import { assignToRoute, closeRoute, launchPromo, promoCost, setAutoFares, setFareMode, setPrice, unassignFromRoute } from '../../sim/actions';
 import { AIRCRAFT_TYPE, AIRCRAFT_TYPES, CLASS_NAMES, typeName } from '../../sim/data/aircraft';
 import { AIRPORT } from '../../sim/data/airports';
-import { blockMinutes, dailyRoundTrips, getMarket, offerOf, OTHER_AIRLINES, rotationFrequency } from '../../sim/market';
+import { blockMinutes, dailyRoundTrips, getMarket, marketInputs, offerOf, OTHER_AIRLINES, rotationFrequency, splitMarket } from '../../sim/market';
 import { canOperate } from '../../sim/ops';
 import { planRoute } from '../../sim/planner';
 import { formatDate, formatMonthShort } from '../../sim/time';
 import type { Route, Triple } from '../../sim/types';
 import { attempt, confirm, loadFactorOf, recentStats, routeCities, routeLabel } from '../app/act';
-import { dollars, duration, integer, km, money, percent, signedMoney, sum3 } from '../app/format';
+import { compact, dollars, duration, integer, km, money, percent, signedMoney, sum3 } from '../app/format';
 import { openPanel, refresh, showAircraft, showRoute, startPlan, toast, useApp, useSim } from '../app/store';
 import { ColumnChart, Sparkline } from '../components/charts';
 import { cx, Empty, Logo, Panel, Seg, Slider, Th, Tile, useSort } from '../components/ui';
@@ -93,6 +93,10 @@ function RouteDetail({ route }: { route: Route }) {
   const assignable = sim.fleetOf(0).filter((a) => !a.rotation.includes(route.id) && (a.base === route.a || a.base === route.b) && canOperate(a.type, route.a, route.b).ok);
   const promoActive = sim.game.time < route.promoUntil;
   const rivals = m.routes.filter((r) => r !== route).map((r) => ({ r, o: offerOf(sim, r) })).filter((x) => x.o.freq > 0);
+  // How the market divides today: every route on the pair, then the other airlines, then connections.
+  const inputs = marketInputs(sim, m);
+  const split = splitMarket(m, inputs);
+  const carried = (i: number) => [0, 1, 2].reduce((n, c) => n + Math.min(split[i][c], inputs[i].freq * inputs[i].seats[c]), 0);
   const typeHint = assigned[0]?.type ?? 'a20n';
 
   return (
@@ -158,15 +162,17 @@ function RouteDetail({ route }: { route: Route }) {
       <div className="section-title">Market</div>
       <div className="small muted">
         About <b className="strong" style={{ color: 'var(--text)' }}>{integer(sum3(m.demand))}</b> people a day want to fly each way
-        ({integer(m.demand[0])} economy, {integer(m.demand[1])} business{m.demand[2] >= 1 ? `, ${integer(m.demand[2])} first` : ''}).
+        ({integer(m.demand[0])} economy, {integer(m.demand[1])} business{m.demand[2] >= 1 ? `, ${integer(m.demand[2])} first` : ''}):
+        about {compact(sum3(m.demand) * 730)} a year. This is who carries them.
       </div>
       <table className="tbl compact">
-        <thead><tr><th>Airline</th><th className="r">Flights/day</th><th className="r">Seats/day</th><th className="r">Economy fare</th></tr></thead>
+        <thead><tr><th>Airline</th><th className="r">Flights</th><th className="r">Seats</th><th className="r" title="Passengers a day each way, as the market divides today">Passengers</th><th className="r">Economy fare</th></tr></thead>
         <tbody>
           <tr className="sel">
             <td><div className="row gap-6"><Logo livery={p.livery} size={16} /><span className="strong">{p.name}</span></div></td>
             <td className="r">{offer.freq.toFixed(1)}</td>
             <td className="r">{integer(offer.freq * sum3(offer.seats))}</td>
+            <td className="r">{integer(carried(m.routes.indexOf(route)))}</td>
             <td className="r">{dollars(route.price[0])}</td>
           </tr>
           {rivals.map(({ r, o }) => {
@@ -176,6 +182,7 @@ function RouteDetail({ route }: { route: Route }) {
                 <td><div className="row gap-6"><Logo livery={al.livery} size={16} />{al.name}</div></td>
                 <td className="r">{o.freq.toFixed(1)}</td>
                 <td className="r">{integer(o.freq * sum3(o.seats))}</td>
+                <td className="r">{integer(carried(m.routes.indexOf(r)))}</td>
                 <td className="r">{dollars(r.price[0])}</td>
               </tr>
             );
@@ -185,12 +192,25 @@ function RouteDetail({ route }: { route: Route }) {
               <td className="muted">Other airlines</td>
               <td className="r">{m.others.freq.toFixed(1)}</td>
               <td className="r">{integer(m.others.freq * sum3(m.others.seats))}</td>
+              <td className="r">{integer(carried(m.routes.length))}</td>
               <td className="r">{dollars(m.others.price[0])}</td>
+            </tr>
+          )}
+          {m.via.freq > 0 && (
+            <tr title="Journeys with a change of planes on other airlines: slower, but always there on a route of this length">
+              <td className="muted">Changing planes elsewhere</td>
+              <td className="r dim">–</td>
+              <td className="r dim">–</td>
+              <td className="r">{integer(carried(m.routes.length + 1))}</td>
+              <td className="r">{dollars(m.via.price[0])}</td>
             </tr>
           )}
         </tbody>
       </table>
-      {rivals.length === 0 && m.others.freq === 0 && <div className="small good">You have this market to yourself.</div>}
+      <div className="tiny dim">Flights, seats and passengers a day in each direction.</div>
+      {rivals.length === 0 && m.others.freq === 0 && (
+        <div className="small good">{m.via.freq > 0 ? 'Nobody else flies this non-stop: your only competition is a change of planes.' : 'You have this market to yourself.'}</div>
+      )}
 
       {route.profitHistory.length > 1 && (
         <>

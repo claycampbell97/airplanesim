@@ -3,7 +3,7 @@
 // once the route is flown (give or take the weather).
 
 import { newLease } from './actions';
-import { AIRCRAFT_TYPE, defaultPreset, makeCabin, totalSeats } from './data/aircraft';
+import { AIRCRAFT_TYPE, defaultPreset, makeCabin, totalSeats, usableRange } from './data/aircraft';
 import { AIRPORTS, airportDistance } from './data/airports';
 import { baseDemand } from './demand';
 import { DAYS_PER_MONTH, ownershipPerDay } from './finance';
@@ -106,7 +106,7 @@ export function suggestRoutes(sim: Sim, al: Airline, hub: AirportId, typeId: str
   for (const ap of AIRPORTS) {
     if (ap.id === hub || existing.has(ap.id)) continue;
     const dist = airportDistance(hub, ap.id);
-    if (dist > type.range || dist < 120 || ap.effRunway < type.runway) continue;
+    if (dist > usableRange(typeId) || dist < 120 || ap.effRunway < type.runway) continue;
     const demand = baseDemand(hub, ap.id);
     if (demand < 25) continue;
     shortlist.push({ id: ap.id, demand });

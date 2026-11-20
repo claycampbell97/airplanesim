@@ -8,7 +8,7 @@
 import { AIRPORT } from './data/airports';
 import { expectedBoarded } from './demand';
 import { feeFactor, labourFactor } from './finance';
-import { blockMinutes, dailyRoundTrips, estimateConnections, getMarket, marketInputs, offerOf, serviceInputs, serviceQuality, splitMarket } from './market';
+import { blockMinutes, dailyRoundTrips, estimateConnections, getMarket, marketInputs, offerOf, sectorFit, serviceInputs, serviceQuality, splitMarket } from './market';
 import type { Market, OfferInput } from './market';
 import { ancillaryPerPax } from './ops';
 import type { Airline, AirportId, Route, Triple } from './types';
@@ -223,7 +223,7 @@ export function serviceFares(
     a, b, hours: blockMinutes(typeId, m.dist) / 60, freq, seats: cabin, conn,
     connFare: [0, 1, 2].map((c) => (conn[c] > 0 ? connRev[c] / conn[c] : m.ref[c] * 0.6)) as Triple,
   };
-  const mine: OfferInput = { freq, seats: cabin, price: start, quality: serviceQuality(al, comfort), boost: opts.boost ?? 1 };
+  const mine: OfferInput = { freq, seats: cabin, price: start, quality: serviceQuality(al, comfort, sectorFit(typeId, m.dist)), boost: opts.boost ?? 1 };
   const inputs = serviceInputs(sim, al, m, mine, opts.existing);
   if (opts.rival) inputs.splice(inputs.length - 1, 0, opts.rival);
   const index = inputs.length - 1;

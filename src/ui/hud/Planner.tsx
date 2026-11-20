@@ -6,13 +6,13 @@ import { acquireAircraft, findRoute, newLease, noteForecast, openRoute, routeSet
 import { AIRCRAFT_TYPE, AIRCRAFT_TYPES, typeName } from '../../sim/data/aircraft';
 import { AIRPORT } from '../../sim/data/airports';
 import { leaseCapacity, leaseCommitment } from '../../sim/finance';
-import { OTHER_AIRLINES } from '../../sim/market';
+import { OTHER_AIRLINES, VIA_HUBS } from '../../sim/market';
 import { forecastRoute, suggestRoutes } from '../../sim/planner';
 import { buySlots, planShortfall, slotsCost, slotsFreeFor, slotsToBuy } from '../../sim/slots';
 import { formatDate } from '../../sim/time';
 import { deliveryDaysFor } from '../../sim/actions';
 import { attempt } from '../app/act';
-import { duration, integer, km, money, percent, signedMoney, sum3 } from '../app/format';
+import { compact, duration, integer, km, money, percent, signedMoney, sum3 } from '../app/format';
 import { cancelPlan, game, refresh, showRoute, toast, updatePlan, useApp, useSim } from '../app/store';
 import { cx, Seg } from '../components/ui';
 
@@ -161,7 +161,9 @@ export function Planner() {
                 <dl className="kv small">
                   <dt>Distance</dt><dd>{km(forecast.dist)} · {duration(forecast.estimate.blockMinutes)}</dd>
                   <dt>Flights</dt><dd>{(forecast.estimate.freq * 2).toFixed(1)} a day ({forecast.estimate.freq.toFixed(1)} each way)</dd>
-                  <dt>Demand</dt><dd>{integer(sum3(forecast.estimate.demand))} passengers a day each way</dd>
+                  <dt>The market</dt>
+                  <dd>{integer(sum3(forecast.estimate.demand))} passengers a day each way <span className="dim">({compact(sum3(forecast.estimate.demand) * 730)} a year)</span></dd>
+                  <dt>Your share</dt><dd>{percent(forecast.estimate.share)} <span className="dim">of those who travel</span></dd>
                   <dt>Passengers per flight</dt><dd>{integer(sum3(forecast.estimate.pax))} of {sum3(forecast.cabin)} seats</dd>
                   {sum3(forecast.estimate.conn) >= 1 && <><dt>…of which connecting</dt><dd>{integer(sum3(forecast.estimate.conn))}</dd></>}
                   <dt>Economy fare</dt><dd>${forecast.price[0]} <span className="dim">({percent(forecast.price[0] / forecast.estimate.ref[0])} of the going rate)</span></dd>
@@ -197,15 +199,17 @@ export function Planner() {
                   <dt className="strong" style={{ color: 'var(--text)' }}>Profit</dt>
                   <dd className={forecast.flight.profit < 0 ? 'bad' : 'good'}>{signedMoney(forecast.flight.profit)} <span className="dim">({percent(forecast.margin)})</span></dd>
                 </dl>
-                <div className="section-title">Competition</div>
-                {forecast.estimate.competitors.length === 0 ? <div className="small good">Nobody flies this route. It would be yours alone.</div> : (
+                <div className="section-title">Who you are up against</div>
+                {forecast.estimate.competitors.length === 0 ? <div className="small good">Nobody flies this route, and it is too short to be worth changing planes for. It would be yours alone.</div> : (
                   <div className="col gap-4 small">
+                    {!forecast.estimate.competitors.some((c) => c.airline !== VIA_HUBS) && <div className="good">Nobody flies this route non-stop: today people change planes on the way.</div>}
                     {forecast.estimate.competitors.map((c, i) => (
                       <div key={i} className="row between">
-                        <span className="muted">{c.airline === OTHER_AIRLINES ? 'Other airlines' : sim.game.airlines[c.airline].name}</span>
-                        <span className="num">{c.freq.toFixed(1)} flights/day · ${Math.round(c.price[0])}</span>
+                        <span className="muted">{c.airline === OTHER_AIRLINES ? 'Other airlines' : c.airline === VIA_HUBS ? 'Changing planes elsewhere' : sim.game.airlines[c.airline].name}</span>
+                        <span className="num">{c.airline === VIA_HUBS ? '' : `${c.freq.toFixed(1)} flights · `}{integer(c.pax)} passengers · ${Math.round(c.price[0])}</span>
                       </div>
                     ))}
+                    <div className="tiny dim">Passengers a day each way they would keep once you are flying.</div>
                   </div>
                 )}
                 <div className="tiny dim">{p.autoFares === false
