@@ -1,145 +1,150 @@
 # Curated airport list for the game world.
 #
-# Columns:  IATA  PAX  TRANSFER  FLAGS
+# Columns:  IATA  PAX  TRANSFER  [FLAGS]  [dom=…]
 #   PAX       approximate annual passengers in millions (game-balance input, not a statistic)
 #   TRANSFER  share of traffic that is connecting rather than local (0..1)
 #   FLAGS     B business-heavy   T leisure-heavy   t partly leisure
 #             W winter-sun / winter peak   S slot-constrained
+#             G intercontinental gateway   g secondary gateway (each country's
+#             largest airport counts as a gateway without being marked)
+#   dom       share of the airport's own passengers flying within the country: what makes
+#             Kennedy a gateway and Denver a domestic hub (left out: the country's share).
+#             A target the demand model is fitted to (npm run data:ties), not a statistic.
 #
 # Coordinates, names, elevation and runway lengths come from OurAirports (public domain)
 # and are merged in by scripts/build-airports.mjs.
 
 # ───────────── United States ─────────────
-ATL 104.7 .62 B
-DFW 81.8 .55 B
-DEN 77.8 .40
-ORD 73.9 .40 B
-LAX 75.1 .15 B
-JFK 62.5 .12 BS
-LAS 57.6 .08 T
-MCO 57.7 .05 T
-MIA 52.3 .30 t
-CLT 53.4 .68
-SEA 50.9 .28 B
-PHX 48.9 .30 t
-EWR 49.1 .22 BS
-SFO 50.2 .18 B
-IAH 46.2 .50 B
-BOS 40.9 .04 B
-FLL 35.1 .05 T
-MSP 34.8 .38
-LGA 32.4 .05 BS
-DTW 31.5 .42
-PHL 28.1 .30
-SLC 26.9 .42
-DCA 25.5 .15 BS
-SAN 24.1 .03 t
-BWI 26.2 .15
-TPA 23.9 .03 T
-AUS 22.1 .03 B
-IAD 25.0 .30 B
-BNA 22.9 .05 t
-MDW 22.0 .25
-HNL 21.2 .10 TW
-DAL 17.5 .20
-PDX 16.5 .05
-STL 15.0 .05
-HOU 14.0 .20
-RDU 14.5 .03
-SJC 12.0 .02 B
-SMF 12.6 .02
-OAK 11.2 .03
-MCI 11.5 .03
-SNA 11.7 .02
-MSY 12.9 .03 T
-CLE 9.9 .03
-SAT 10.7 .03
-PIT 9.2 .03
-IND 9.8 .03
-CVG 8.8 .05
-CMH 8.4 .03
-RSW 10.1 .02 TW
-OGG 7.0 .05 TW
-KOA 4.0 .03 TW
-LIH 3.2 .03 TW
-MKE 6.0 .03
-JAX 7.4 .03
-ANC 5.4 .10
-FAI 1.1 .05
-JNU 0.8 0
-ABQ 5.3 .03
-BUF 4.6 .02
-OMA 5.0 .02
-BOI 4.7 .03
-RNO 4.6 .03 t
-TUS 3.9 .02
-OKC 4.4 .02
-MEM 4.7 .03
-CHS 6.1 .02 t
-GEG 4.1 .03
-ELP 3.9 .02
-BDL 6.5 .02
-PVD 3.9 .02
-SDF 4.2 .02
-ORF 4.5 .02
-RIC 4.8 .02
-TUL 3.1 .02
-DSM 3.0 .02
-SAV 3.9 .02 t
-MYR 3.4 .02 T
-PSP 3.2 .02 TW
-BZN 2.5 .02 T
-JAC 0.8 0 T
-ASE 0.6 0 TW
-EYW 1.4 0 TW
-SJU 12.2 .08 TW
-STT 1.6 .03 TW
-GUM 3.0 .10 T
+ATL 104.7 .62 Bg dom=.86
+DFW 81.8 .55 Bg dom=.87
+DEN 77.8 .40 g dom=.92
+ORD 73.9 .40 BG dom=.82
+LAX 75.1 .15 BG dom=.67
+JFK 62.5 .12 BSG dom=.45
+LAS 57.6 .08 Tg dom=.92
+MCO 57.7 .05 Tg dom=.85
+MIA 52.3 .30 tG dom=.50
+CLT 53.4 .68 dom=.93
+SEA 50.9 .28 Bg dom=.86
+PHX 48.9 .30 t dom=.94
+EWR 49.1 .22 BSG dom=.68
+SFO 50.2 .18 BG dom=.70
+IAH 46.2 .50 Bg dom=.76
+BOS 40.9 .04 Bg dom=.78
+FLL 35.1 .05 Tg dom=.77
+MSP 34.8 .38 g dom=.92
+LGA 32.4 .05 BS dom=.90
+DTW 31.5 .42 g dom=.91
+PHL 28.1 .30 g dom=.87
+SLC 26.9 .42 dom=.95
+DCA 25.5 .15 BS dom=.93
+SAN 24.1 .03 t dom=.93
+BWI 26.2 .15 dom=.93
+TPA 23.9 .03 T dom=.93
+AUS 22.1 .03 B dom=.93
+IAD 25.0 .30 BG dom=.62
+BNA 22.9 .05 t dom=.94
+MDW 22.0 .25 dom=.95
+HNL 21.2 .10 TWG dom=.75
+DAL 17.5 .20 dom=.94
+PDX 16.5 .05 dom=.93
+STL 15.0 .05 dom=.94
+HOU 14.0 .20 dom=.93
+RDU 14.5 .03 dom=.94
+SJC 12.0 .02 B dom=.92
+SMF 12.6 .02 dom=.94
+OAK 11.2 .03 dom=.93
+MCI 11.5 .03 dom=.94
+SNA 11.7 .02 dom=.94
+MSY 12.9 .03 T dom=.94
+CLE 9.9 .03 dom=.94
+SAT 10.7 .03 dom=.93
+PIT 9.2 .03 dom=.94
+IND 9.8 .03 dom=.94
+CVG 8.8 .05 dom=.94
+CMH 8.4 .03 dom=.94
+RSW 10.1 .02 TW dom=.94
+OGG 7.0 .05 TW dom=.94
+KOA 4.0 .03 TW dom=.94
+LIH 3.2 .03 TW dom=.94
+MKE 6.0 .03 dom=.94
+JAX 7.4 .03 dom=.94
+ANC 5.4 .10 dom=.94
+FAI 1.1 .05 dom=.94
+JNU 0.8 0 dom=.94
+ABQ 5.3 .03 dom=.94
+BUF 4.6 .02 dom=.94
+OMA 5.0 .02 dom=.94
+BOI 4.7 .03 dom=.94
+RNO 4.6 .03 t dom=.94
+TUS 3.9 .02 dom=.94
+OKC 4.4 .02 dom=.94
+MEM 4.7 .03 dom=.94
+CHS 6.1 .02 t dom=.94
+GEG 4.1 .03 dom=.94
+ELP 3.9 .02 dom=.94
+BDL 6.5 .02 dom=.94
+PVD 3.9 .02 dom=.94
+SDF 4.2 .02 dom=.94
+ORF 4.5 .02 dom=.94
+RIC 4.8 .02 dom=.94
+TUL 3.1 .02 dom=.94
+DSM 3.0 .02 dom=.94
+SAV 3.9 .02 t dom=.94
+MYR 3.4 .02 T dom=.94
+PSP 3.2 .02 TW dom=.94
+BZN 2.5 .02 T dom=.94
+JAC 0.8 0 T dom=.94
+ASE 0.6 0 TW dom=.94
+EYW 1.4 0 TW dom=.94
+SJU 12.2 .08 tW dom=.90
+STT 1.6 .03 TW dom=.92
+GUM 3.0 .10 TG dom=.25
 
 # ───────────── Canada ─────────────
-YYZ 50.5 .28 B
-YVR 26.4 .20 B
-YUL 20.3 .15 B
-YYC 18.0 .25
-YEG 8.1 .03
-YOW 5.1 .02
-YWG 4.5 .03
-YHZ 4.2 .03
-YQB 1.8 .02
-YYJ 1.9 .02
-YYT 1.5 .02
-YXE 1.5 .02
-YQR 1.2 .02
-YLW 2.0 .02
-YTZ 2.8 .02 B
-YZF 0.6 .05
-YXY 0.4 0
-YFB 0.15 .05
+YYZ 50.5 .28 BG dom=.38
+YVR 26.4 .20 BG dom=.48
+YUL 20.3 .15 BG dom=.38
+YYC 18.0 .25 g dom=.70
+YEG 8.1 .03 dom=.80
+YOW 5.1 .02 dom=.78
+YWG 4.5 .03 dom=.82
+YHZ 4.2 .03 dom=.82
+YQB 1.8 .02 dom=.88
+YYJ 1.9 .02 dom=.88
+YYT 1.5 .02 dom=.88
+YXE 1.5 .02 dom=.88
+YQR 1.2 .02 dom=.88
+YLW 2.0 .02 dom=.88
+YTZ 2.8 .02 B dom=.80
+YZF 0.6 .05 dom=.88
+YXY 0.4 0 dom=.88
+YFB 0.15 .05 dom=.88
 
 # ───────────── Mexico, Central America, Caribbean ─────────────
-MEX 50.3 .20 BS
-CUN 32.7 .02 TW
-GDL 17.7 .05
-MTY 13.3 .05 B
-TIJ 13.2 .03
-SJD 7.5 0 TW
-PVR 6.8 0 TW
-MID 3.6 0 t
-OAX 1.6 0 t
+MEX 50.3 .20 BSG dom=.67
+CUN 32.7 .02 TWG dom=.35
+GDL 17.7 .05 g dom=.72
+MTY 13.3 .05 Bg dom=.88
+TIJ 13.2 .03 dom=.99
+SJD 7.5 0 TWg dom=.30
+PVR 6.8 0 TWg dom=.45
+MID 3.6 0 t dom=.92
+OAX 1.6 0 t dom=.95
 PTY 16.6 .72
 SJO 5.6 .05 T
-LIR 1.8 0 TW
+LIR 1.8 0 TWg
 SAL 3.6 .50
 GUA 3.0 .05
 SAP 1.2 0
 MGA 1.6 0
 BZE 1.2 0 TW
 HAV 5.8 .05 t
-VRA 2.0 0 TW
+VRA 2.0 0 TWg
 PUJ 8.3 0 TW
-SDQ 4.9 .03
+SDQ 4.9 .03 g
 MBJ 5.0 0 TW
-KIN 1.8 0
+KIN 1.8 0 g
 NAS 3.9 .05 TW
 AUA 2.5 0 TW
 CUR 1.6 .05 TW
@@ -150,91 +155,91 @@ GCM 1.3 0 TW
 BDA 0.9 0 t
 ANU 0.9 .05 TW
 UVF 0.9 0 TW
-PTP 2.3 0 TW
-FDF 1.9 0 TW
+PTP 2.3 0 TW dom=.75
+FDF 1.9 0 TW dom=.78
 
 # ───────────── South America ─────────────
-GRU 43.0 .30 B
-CGH 22.3 .10 BS
-SDU 9.0 .05 B
-GIG 14.0 .10 t
-BSB 16.7 .35
-CNF 11.0 .05
-VCP 12.0 .40
-REC 8.7 .10 t
-SSA 7.7 .03 t
-POA 8.3 .03
-FOR 7.2 .03 t
-CWB 6.5 .03
-MAO 3.1 .03
-BEL 3.5 .03
-FLN 3.9 0 t
-NAT 2.4 0 T
-IGU 2.0 0 T
-BOG 35.4 .30 B
-MDE 9.0 .03
-CTG 5.7 0 T
-CLO 5.6 .03
-BAQ 2.9 0
-ADZ 2.2 0 T
-LIM 23.6 .20
-CUZ 3.8 0 T
-AQP 1.9 0
-SCL 24.6 .15 B
-PUQ 1.0 0 t
-IPC 0.3 0 T
-CJC 2.0 0
-ANF 2.2 0
-EZE 12.4 .10
-AEP 12.3 .10
-COR 3.4 .03
-MDZ 2.3 0 t
-BRC 1.8 0 T
-USH 0.9 0 T
-IGR 1.5 0 T
-UIO 5.0 .05
-GYE 4.0 .03
-GPS 0.5 0 T
+GRU 43.0 .30 BG dom=.67
+CGH 22.3 .10 BS dom=1
+SDU 9.0 .05 B dom=1
+GIG 14.0 .10 tG dom=.70
+BSB 16.7 .35 g dom=.94
+CNF 11.0 .05 g dom=.93
+VCP 12.0 .40 dom=.93
+REC 8.7 .10 tg dom=.92
+SSA 7.7 .03 tg dom=.93
+POA 8.3 .03 g dom=.92
+FOR 7.2 .03 tg dom=.91
+CWB 6.5 .03 dom=.96
+MAO 3.1 .03 dom=.96
+BEL 3.5 .03 dom=.96
+FLN 3.9 0 t dom=.93
+NAT 2.4 0 T dom=.96
+IGU 2.0 0 T dom=.96
+BOG 35.4 .30 B dom=.67
+MDE 9.0 .03 g dom=.78
+CTG 5.7 0 Tg dom=.85
+CLO 5.6 .03 dom=.85
+BAQ 2.9 0 dom=.88
+ADZ 2.2 0 T dom=.95
+LIM 23.6 .20 dom=.58
+CUZ 3.8 0 T dom=.98
+AQP 1.9 0 dom=1
+SCL 24.6 .15 B dom=.55
+PUQ 1.0 0 t dom=1
+IPC 0.3 0 T dom=1
+CJC 2.0 0 dom=1
+ANF 2.2 0 dom=1
+EZE 12.4 .10 G dom=.03
+AEP 12.3 .10 dom=.90
+COR 3.4 .03 dom=.88
+MDZ 2.3 0 t dom=.88
+BRC 1.8 0 T dom=.97
+USH 0.9 0 T dom=.97
+IGR 1.5 0 T dom=.97
+UIO 5.0 .05 g dom=.55
+GYE 4.0 .03 g dom=.60
+GPS 0.5 0 T dom=1
 CCS 3.0 .03
 MVD 2.1 .03
 ASU 1.2 .03
-LPB 1.4 0
-VVI 2.6 .05
+LPB 1.4 0 dom=.75
+VVI 2.6 .05 dom=.60
 GEO 0.8 0
 PBM 0.5 0
-CAY 0.5 0
+CAY 0.5 0 dom=.80
 
 # ───────────── United Kingdom & Ireland ─────────────
-LHR 80.9 .25 BS
-LGW 46.6 .05 tS
-STN 28.1 0
-LTN 18.0 0
-LCY 5.1 0 BS
-MAN 29.4 .03
-EDI 14.7 .02
-GLA 9.7 .02
-BHX 12.6 .02
-BRS 9.0 0
-NCL 5.2 0
-BFS 6.3 0
-ABZ 3.0 0 B
-LPL 5.0 0
-INV 0.9 0
+LHR 80.9 .25 BSG dom=.06
+LGW 46.6 .05 Sg dom=.10
+STN 28.1 0 dom=.08
+LTN 18.0 0 dom=.07
+LCY 5.1 0 BS dom=.22
+MAN 29.4 .03 g dom=.09
+EDI 14.7 .02 g dom=.38
+GLA 9.7 .02 g dom=.45
+BHX 12.6 .02 g dom=.12
+BRS 9.0 0 dom=.20
+NCL 5.2 0 dom=.30
+BFS 6.3 0 dom=.70
+ABZ 3.0 0 B dom=.60
+LPL 5.0 0 dom=.18
+INV 0.9 0 dom=.88
 DUB 32.9 .10
 ORK 2.6 0
-SNN 1.9 0
+SNN 1.9 0 g
 
 # ───────────── France, Benelux ─────────────
-CDG 76.2 .30 B
-ORY 31.9 .05
-NCE 14.5 0 t
-LYS 11.7 .03
-MRS 10.2 0
-TLS 9.6 0 B
-BOD 7.7 0
-NTE 7.2 0
-BSL 9.1 0
-AJA 1.6 0 T
+CDG 76.2 .30 BG dom=.10
+ORY 31.9 .05 g dom=.50
+NCE 14.5 0 tg dom=.35
+LYS 11.7 .03 g dom=.35
+MRS 10.2 0 g dom=.40
+TLS 9.6 0 B dom=.55
+BOD 7.7 0 dom=.50
+NTE 7.2 0 dom=.45
+BSL 9.1 0 dom=.05
+AJA 1.6 0 T dom=.95
 AMS 71.7 .37 BS
 EIN 6.7 0
 BRU 26.4 .15 B
@@ -242,101 +247,101 @@ CRL 8.2 0
 LUX 4.4 0 B
 
 # ───────────── Germany, Switzerland, Austria ─────────────
-FRA 70.6 .50 BS
-MUC 47.9 .38 B
-BER 23.0 .03
-DUS 25.5 .05 B
-HAM 17.3 0
-STR 12.7 0 B
-CGN 12.4 0
-HAJ 6.3 0
-NUE 4.1 0
+FRA 70.6 .50 BSG dom=.11
+MUC 47.9 .38 BG dom=.23
+BER 23.0 .03 g dom=.25
+DUS 25.5 .05 Bg dom=.20
+HAM 17.3 0 g dom=.30
+STR 12.7 0 B dom=.25
+CGN 12.4 0 dom=.28
+HAJ 6.3 0 dom=.20
+NUE 4.1 0 dom=.25
 ZRH 31.5 .30 B
-GVA 17.9 .03 B
+GVA 17.9 .03 Bg
 VIE 31.7 .25 B
 SZG 1.7 0 t
 INN 1.1 0 TW
 
 # ───────────── Iberia ─────────────
-MAD 61.7 .28 B
-BCN 52.7 .05 t
-PMI 29.7 0 T
-AGP 19.9 0 T
-ALC 15.0 0 T
-LPA 13.3 .03 TW
-TFS 11.2 0 TW
-ACE 7.3 0 TW
-FUE 5.6 0 TW
-IBZ 8.2 0 T
-VLC 8.5 0
-SVQ 7.5 0 t
-BIO 5.9 0 B
-SCQ 2.9 0
-MAH 3.5 0 T
-LIS 31.2 .20 t
-OPO 13.1 .02
-FAO 9.0 0 T
-FNC 3.2 0 TW
-PDL 2.0 0 T
+MAD 61.7 .28 BG dom=.28
+BCN 52.7 .05 tG dom=.27
+PMI 29.7 0 T dom=.25
+AGP 19.9 0 Tg dom=.15
+ALC 15.0 0 T dom=.12
+LPA 13.3 .03 TW dom=.38
+TFS 11.2 0 TW dom=.12
+ACE 7.3 0 TW dom=.35
+FUE 5.6 0 TW dom=.30
+IBZ 8.2 0 T dom=.45
+VLC 8.5 0 dom=.30
+SVQ 7.5 0 t dom=.50
+BIO 5.9 0 B dom=.65
+SCQ 2.9 0 dom=.75
+MAH 3.5 0 T dom=.55
+LIS 31.2 .20 t dom=.12
+OPO 13.1 .02 g dom=.13
+FAO 9.0 0 T dom=.05
+FNC 3.2 0 TW dom=.45
+PDL 2.0 0 T dom=.70
 
 # ───────────── Italy, Greece, Cyprus, Malta ─────────────
-FCO 43.5 .20 t
-MXP 28.8 .05 B
-LIN 9.5 0 B
-BGY 13.9 0
-VCE 11.6 0 T
-NAP 10.9 0 t
-BLQ 9.4 0
-CTA 10.2 0 t
-PMO 7.0 0 t
-FLR 3.0 0 T
-PSA 5.0 0 t
-TRN 4.0 0
-BRI 5.5 0
-CAG 4.5 0 T
-OLB 3.0 0 T
-VRN 3.5 0
-ATH 25.6 .10 t
-SKG 6.9 0
-HER 8.0 0 T
-RHO 5.5 0 T
-CFU 3.3 0 T
-JTR 2.3 0 T
-JMK 1.4 0 T
-CHQ 3.0 0 T
+FCO 43.5 .20 tG dom=.28
+MXP 28.8 .05 BG dom=.15
+LIN 9.5 0 B dom=.55
+BGY 13.9 0 dom=.25
+VCE 11.6 0 Tg dom=.13
+NAP 10.9 0 tg dom=.35
+BLQ 9.4 0 dom=.22
+CTA 10.2 0 t dom=.65
+PMO 7.0 0 t dom=.70
+FLR 3.0 0 T dom=.15
+PSA 5.0 0 t dom=.25
+TRN 4.0 0 dom=.50
+BRI 5.5 0 dom=.60
+CAG 4.5 0 T dom=.70
+OLB 3.0 0 T dom=.50
+VRN 3.5 0 dom=.35
+ATH 25.6 .10 t dom=.32
+SKG 6.9 0 dom=.38
+HER 8.0 0 T dom=.15
+RHO 5.5 0 T dom=.15
+CFU 3.3 0 T dom=.10
+JTR 2.3 0 T dom=.45
+JMK 1.4 0 T dom=.40
+CHQ 3.0 0 T dom=.20
 LCA 8.2 0 T
 PFO 3.0 0 T
 MLA 7.3 0 T
 
 # ───────────── Nordics ─────────────
-CPH 30.3 .20 B
-BLL 3.5 0
-AAL 1.5 0
-OSL 28.6 .15
-BGO 6.3 0
-TRD 4.4 0
-SVG 4.3 0 B
-TOS 2.3 0
-BOO 1.8 0
-LYR 0.18 0 T
-ARN 25.6 .15 B
-GOT 6.8 0
-MMX 2.0 0
-LLA 1.2 0
-HEL 21.9 .30
-OUL 1.0 0
-RVN 0.7 0 TW
+CPH 30.3 .20 B dom=.07
+BLL 3.5 0 dom=.08
+AAL 1.5 0 dom=.60
+OSL 28.6 .15 dom=.45
+BGO 6.3 0 dom=.65
+TRD 4.4 0 dom=.80
+SVG 4.3 0 B dom=.65
+TOS 2.3 0 dom=.92
+BOO 1.8 0 dom=.97
+LYR 0.18 0 T dom=1
+ARN 25.6 .15 B dom=.22
+GOT 6.8 0 dom=.22
+MMX 2.0 0 dom=.70
+LLA 1.2 0 dom=.92
+HEL 21.9 .30 dom=.16
+OUL 1.0 0 dom=.95
+RVN 0.7 0 TW dom=.85
 KEF 7.2 .30 T
-FAE 0.4 0
-GOH 0.1 0
+FAE 0.4 0 dom=.85
+GOH 0.1 0 dom=.90
 
 # ───────────── Central & Eastern Europe ─────────────
-WAW 18.9 .20
-KRK 8.4 0 t
-GDN 5.4 0
-KTW 5.0 0
-WRO 3.5 0
-POZ 2.4 0
+WAW 18.9 .20 dom=.12
+KRK 8.4 0 tg dom=.07
+GDN 5.4 0 dom=.08
+KTW 5.0 0 dom=.02
+WRO 3.5 0 dom=.10
+POZ 2.4 0 dom=.05
 PRG 17.8 .05 t
 BUD 16.2 .03 t
 BTS 2.3 0
@@ -363,309 +368,309 @@ KBP 6.0 0
 LWO 2.0 0
 ODS 1.5 0
 MSQ 2.5 0
-SVO 36.0 .30
-DME 20.0 .05
-VKO 16.0 .05
-LED 19.6 .03
-AER 6.8 0 T
-SVX 6.2 .03
-OVB 6.7 .10
-KZN 3.5 0
-KRR 4.6 0
-ROV 3.0 0
-UFA 3.2 0
-KJA 2.5 .05
-IKT 2.4 0
-VVO 3.0 0
-KHV 2.2 0
-PKC 0.8 0 T
-YKS 0.9 0
-MMK 0.9 0
-KGD 3.8 0
+SVO 36.0 .30 G dom=.55
+DME 20.0 .05 G dom=.60
+VKO 16.0 .05 g dom=.70
+LED 19.6 .03 g dom=.62
+AER 6.8 0 T dom=.97
+SVX 6.2 .03 g dom=.85
+OVB 6.7 .10 g dom=.85
+KZN 3.5 0 dom=.85
+KRR 4.6 0 dom=.85
+ROV 3.0 0 dom=.85
+UFA 3.2 0 dom=.85
+KJA 2.5 .05 dom=.85
+IKT 2.4 0 dom=.85
+VVO 3.0 0 dom=.85
+KHV 2.2 0 dom=.85
+PKC 0.8 0 T dom=.85
+YKS 0.9 0 dom=.85
+MMK 0.9 0 dom=.85
+KGD 3.8 0 dom=.85
 
 # ───────────── Türkiye & Caucasus ─────────────
-IST 76.0 .55 B
-SAW 41.0 .10
-AYT 35.7 0 T
-ESB 12.0 .03
-ADB 12.4 0
-DLM 4.5 0 T
-BJV 4.3 0 T
-TZX 3.5 0
-GZT 2.5 0
+IST 76.0 .55 BG dom=.25
+SAW 41.0 .10 g dom=.60
+AYT 35.7 0 Tg dom=.22
+ESB 12.0 .03 dom=.85
+ADB 12.4 0 g dom=.75
+DLM 4.5 0 T dom=.40
+BJV 4.3 0 T dom=.55
+TZX 3.5 0 dom=.95
+GZT 2.5 0 dom=.90
 TBS 3.7 0
 BUS 0.6 0 t
 EVN 5.0 0
 GYD 7.0 .05
 
 # ───────────── Middle East ─────────────
-DXB 86.4 .60 B
-SHJ 17.0 .20
-AUH 28.0 .60
+DXB 86.4 .60 BG
+SHJ 17.0 .20 g
+AUH 28.0 .60 G
 DOH 50.0 .75
 KWI 15.5 .05
 BAH 9.6 .40
-MCT 13.0 .30
-SLL 1.5 0 T
-RUH 37.0 .10 B
-JED 49.0 .10
-MED 8.4 0
-DMM 10.4 .03
+MCT 13.0 .30 dom=.08
+SLL 1.5 0 T dom=.50
+RUH 37.0 .10 BG dom=.55
+JED 49.0 .10 G dom=.45
+MED 8.4 0 G dom=.45
+DMM 10.4 .03 g dom=.50
 TLV 21.0 .03 B
 AMM 9.0 .20
 AQJ 0.3 0 T
 BEY 7.0 .03
 BGW 3.0 0
-EBL 2.0 0
+EBL 2.0 0 g
 BSR 1.0 0
-IKA 9.0 .05
-MHD 10.0 0
-SYZ 3.0 0
+IKA 9.0 .05 dom=.50
+MHD 10.0 0 g dom=.80
+SYZ 3.0 0 dom=.85
 DAM 1.5 0
 
 # ───────────── Central & South Asia ─────────────
-ALA 9.5 .10
-NQZ 7.5 .03
+ALA 9.5 .10 dom=.55
+NQZ 7.5 .03 dom=.62
 TAS 6.0 .05
 SKD 1.2 0 T
 DYU 1.5 0
 ASB 1.0 0
 KBL 1.0 0
-DEL 73.0 .20 B
-BOM 52.0 .10 BS
-BLR 38.0 .05 B
-HYD 25.0 .05
-MAA 21.0 .05
-CCU 20.0 .03
-AMD 11.4 0
-COK 10.2 .03
-PNQ 9.0 0
-GOI 8.4 0 TW
-JAI 5.5 0 t
-LKO 5.5 0
-TRV 4.4 0
-GAU 5.5 0
-SXR 4.0 0 T
-IXL 1.2 0 T
-IXC 3.5 0
-PAT 3.5 0
-BBI 4.0 0
-VNS 3.0 0 t
-NAG 2.8 0
-IXB 3.0 0
-ATQ 3.0 0
-CCJ 3.3 0
-IXE 2.0 0
-VTZ 2.8 0
+DEL 73.0 .20 BG dom=.73
+BOM 52.0 .10 BSG dom=.72
+BLR 38.0 .05 Bg dom=.84
+HYD 25.0 .05 g dom=.80
+MAA 21.0 .05 g dom=.74
+CCU 20.0 .03 g dom=.85
+AMD 11.4 0 g dom=.80
+COK 10.2 .03 g dom=.50
+PNQ 9.0 0 dom=.90
+GOI 8.4 0 TWg dom=.88
+JAI 5.5 0 t dom=.88
+LKO 5.5 0 dom=.85
+TRV 4.4 0 g dom=.45
+GAU 5.5 0 dom=.93
+SXR 4.0 0 T dom=.93
+IXL 1.2 0 T dom=.93
+IXC 3.5 0 dom=.93
+PAT 3.5 0 dom=.93
+BBI 4.0 0 dom=.93
+VNS 3.0 0 t dom=.93
+NAG 2.8 0 dom=.93
+IXB 3.0 0 dom=.93
+ATQ 3.0 0 g dom=.70
+CCJ 3.3 0 g dom=.20
+IXE 2.0 0 dom=.93
+VTZ 2.8 0 dom=.93
 CMB 8.9 .10 t
-MLE 4.9 0 TW
-GAN 0.2 0 TW
-DAC 11.0 .03
-CGP 1.5 0
+MLE 4.9 0 TW dom=.04
+GAN 0.2 0 TW dom=.95
+DAC 11.0 .03 dom=.12
+CGP 1.5 0 g dom=.45
 KTM 8.0 0 t
 PBH 0.4 0 T
-KHI 7.2 0
-LHE 5.2 0
-ISB 4.8 0
+KHI 7.2 0 G dom=.40
+LHE 5.2 0 G dom=.25
+ISB 4.8 0 G dom=.30
 
 # ───────────── China, Hong Kong, Macau, Taiwan, Mongolia ─────────────
-PEK 53.0 .20 BS
-PKX 39.0 .10
-PVG 54.0 .15 BS
-SHA 42.0 .05 B
-CAN 63.0 .10
-SZX 52.9 .05 B
-CTU 30.0 .03
-TFU 45.0 .10
-KMG 42.0 .10 t
-XIY 41.0 .10 t
-CKG 44.8 .05
-HGH 41.0 .03
-NKG 27.0 .03
-CGO 25.0 .05
-XMN 24.0 .03
-WUH 26.0 .03
-CSX 27.0 .03
-TAO 24.0 .03
-HAK 24.0 0 T
-URC 25.0 .10
-TSN 18.0 0
-SYX 21.0 0 TW
-HRB 20.0 0
-DLC 18.0 0
-SHE 20.0 0
-KWE 20.0 0
-LHW 15.0 0
-TYN 13.0 0
-NNG 14.0 0
-FOC 13.0 0
-KHN 10.0 0
-HFE 11.0 0
-TNA 16.0 0
-CGQ 14.0 0
-SJW 10.0 0
-HET 11.0 0
-INC 8.0 0
-XNN 7.0 0
-LXA 5.5 0 T
-KWL 6.0 0 T
-LJG 6.0 0 T
-ZUH 11.0 0
-WNZ 10.0 0
-NGB 12.0 0
-JHG 5.0 0 T
-KHG 2.5 0
+PEK 53.0 .20 BSG dom=.75
+PKX 39.0 .10 g dom=.90
+PVG 54.0 .15 BSG dom=.55
+SHA 42.0 .05 B dom=.95
+CAN 63.0 .10 G dom=.77
+SZX 52.9 .05 Bg dom=.88
+CTU 30.0 .03 g dom=.91
+TFU 45.0 .10 g dom=.91
+KMG 42.0 .10 tg dom=.90
+XIY 41.0 .10 tg dom=.92
+CKG 44.8 .05 g dom=.92
+HGH 41.0 .03 g dom=.90
+NKG 27.0 .03 g dom=.90
+CGO 25.0 .05 dom=.95
+XMN 24.0 .03 g dom=.87
+WUH 26.0 .03 g dom=.92
+CSX 27.0 .03 g dom=.92
+TAO 24.0 .03 g dom=.90
+HAK 24.0 0 T dom=.95
+URC 25.0 .10 dom=.95
+TSN 18.0 0 dom=.92
+SYX 21.0 0 TWg dom=.95
+HRB 20.0 0 dom=.94
+DLC 18.0 0 dom=.90
+SHE 20.0 0 dom=.93
+KWE 20.0 0 dom=.95
+LHW 15.0 0 dom=.95
+TYN 13.0 0 dom=.95
+NNG 14.0 0 dom=.95
+FOC 13.0 0 dom=.95
+KHN 10.0 0 dom=.95
+HFE 11.0 0 dom=.95
+TNA 16.0 0 dom=.95
+CGQ 14.0 0 dom=.95
+SJW 10.0 0 dom=.95
+HET 11.0 0 dom=.95
+INC 8.0 0 dom=.95
+XNN 7.0 0 dom=.95
+LXA 5.5 0 T dom=.95
+KWL 6.0 0 T dom=.95
+LJG 6.0 0 T dom=.95
+ZUH 11.0 0 dom=.95
+WNZ 10.0 0 dom=.95
+NGB 12.0 0 dom=.95
+JHG 5.0 0 T dom=.95
+KHG 2.5 0 dom=.95
 HKG 53.0 .30 BS
 MFM 9.6 0 T
-TPE 45.0 .15 B
-TSA 6.0 0 B
-KHH 7.5 0
-RMQ 2.0 0
+TPE 45.0 .15 B dom=0
+TSA 6.0 0 B dom=.55
+KHH 7.5 0 g dom=.10
+RMQ 2.0 0 dom=.50
 UBN 2.0 0
 
 # ───────────── Japan, Korea ─────────────
-HND 79.0 .10 BS
-NRT 39.0 .20
-KIX 30.0 .05 t
-ITM 16.5 0
-NGO 13.5 .03
-FUK 24.7 .03
-CTS 24.6 0 t
-OKA 21.8 0 T
-KOJ 5.5 0
-SDJ 3.7 0
-HIJ 3.0 0
-KMJ 3.3 0
-NGS 3.2 0
-MYJ 3.0 0
-KMQ 1.7 0
-ISG 2.6 0 T
-ICN 70.0 .20 B
-GMP 25.4 0 B
-CJU 31.3 0 T
-PUS 17.0 0
-TAE 4.0 0
+HND 79.0 .10 BSG dom=.80
+NRT 39.0 .20 G dom=.22
+KIX 30.0 .05 tG dom=.28
+ITM 16.5 0 dom=1
+NGO 13.5 .03 g dom=.55
+FUK 24.7 .03 g dom=.73
+CTS 24.6 0 tg dom=.84
+OKA 21.8 0 T dom=.83
+KOJ 5.5 0 dom=.93
+SDJ 3.7 0 dom=.93
+HIJ 3.0 0 dom=.93
+KMJ 3.3 0 dom=.93
+NGS 3.2 0 dom=.93
+MYJ 3.0 0 dom=.93
+KMQ 1.7 0 dom=.93
+ISG 2.6 0 T dom=.93
+ICN 70.0 .20 B dom=.01
+GMP 25.4 0 B dom=.83
+CJU 31.3 0 T dom=.92
+PUS 17.0 0 g dom=.45
+TAE 4.0 0 dom=.45
 
 # ───────────── South-East Asia ─────────────
 SIN 67.0 .30 B
-KUL 57.0 .20
-PEN 8.3 0
-BKI 9.4 0 t
-KCH 6.0 0
-LGK 2.9 0 T
-JHB 4.3 0
-BKK 62.0 .15 t
-DMK 30.0 .03
-HKT 18.1 0 TW
-CNX 11.3 0 T
-USM 2.7 0 T
-KBV 4.0 0 TW
-HDY 4.0 0
-CGK 54.0 .10
-DPS 24.2 .03 T
-SUB 16.6 .05
-UPG 10.0 .20
-KNO 8.0 0
-BPN 5.0 0
-YIA 4.0 0 t
-LOP 3.0 0 T
-BDO 3.0 0
-PLM 4.0 0
-PKU 3.5 0
-SRG 3.5 0
-DJJ 1.5 0
-MNL 50.0 .10
-CEB 12.7 .05 t
-DVO 4.0 0
-CRK 3.0 0
-MPH 3.0 0 T
-PPS 2.0 0 T
-SGN 41.0 .05
-HAN 30.0 .05
-DAD 15.5 0 T
-CXR 9.7 0 T
-PQC 5.0 0 T
-HPH 2.7 0
+KUL 57.0 .20 dom=.28
+PEN 8.3 0 g dom=.50
+BKI 9.4 0 tg dom=.70
+KCH 6.0 0 dom=.88
+LGK 2.9 0 T dom=.85
+JHB 4.3 0 dom=.80
+BKK 62.0 .15 tG dom=.20
+DMK 30.0 .03 g dom=.62
+HKT 18.1 0 TWg dom=.45
+CNX 11.3 0 Tg dom=.75
+USM 2.7 0 T dom=.90
+KBV 4.0 0 TWg dom=.60
+HDY 4.0 0 dom=.92
+CGK 54.0 .10 G dom=.75
+DPS 24.2 .03 TG dom=.45
+SUB 16.6 .05 g dom=.86
+UPG 10.0 .20 g dom=.95
+KNO 8.0 0 g dom=.80
+BPN 5.0 0 dom=.95
+YIA 4.0 0 t dom=.95
+LOP 3.0 0 T dom=.90
+BDO 3.0 0 dom=.95
+PLM 4.0 0 dom=.95
+PKU 3.5 0 dom=.95
+SRG 3.5 0 dom=.95
+DJJ 1.5 0 dom=.95
+MNL 50.0 .10 dom=.50
+CEB 12.7 .05 tg dom=.65
+DVO 4.0 0 dom=.97
+CRK 3.0 0 g dom=.45
+MPH 3.0 0 T dom=1
+PPS 2.0 0 T dom=.98
+SGN 41.0 .05 G dom=.62
+HAN 30.0 .05 G dom=.63
+DAD 15.5 0 Tg dom=.55
+CXR 9.7 0 Tg dom=.40
+PQC 5.0 0 Tg dom=.80
+HPH 2.7 0 dom=.95
 PNH 6.0 0
-SAI 4.0 0 T
-RGN 4.0 0
-MDL 1.0 0
+SAI 4.0 0 Tg
+RGN 4.0 0 dom=.35
+MDL 1.0 0 dom=.60
 VTE 2.3 0
 LPQ 1.0 0 T
 BWN 2.0 0
 DIL 0.3 0
 
 # ───────────── Oceania ─────────────
-SYD 42.0 .05 BS
-MEL 35.0 .05 B
-BNE 23.0 .05
-PER 16.0 .03
-ADL 8.5 0
-OOL 6.5 0 T
-CNS 5.0 0 T
-CBR 3.2 0 B
-HBA 2.8 0 t
-DRW 2.0 0
-TSV 1.6 0
-ASP 0.6 0 T
-AYQ 0.4 0 T
-BME 0.4 0 T
-KTA 0.9 0 B
-AKL 19.0 .10
-CHC 6.9 0 t
-WLG 6.4 0 B
-ZQN 2.6 0 T
-DUD 1.0 0
+SYD 42.0 .05 BSG dom=.62
+MEL 35.0 .05 BG dom=.70
+BNE 23.0 .05 g dom=.75
+PER 16.0 .03 g dom=.70
+ADL 8.5 0 g dom=.86
+OOL 6.5 0 Tg dom=.84
+CNS 5.0 0 Tg dom=.85
+CBR 3.2 0 B dom=.92
+HBA 2.8 0 t dom=.92
+DRW 2.0 0 dom=.88
+TSV 1.6 0 dom=.92
+ASP 0.6 0 T dom=.92
+AYQ 0.4 0 T dom=.92
+BME 0.4 0 T dom=.92
+KTA 0.9 0 B dom=.92
+AKL 19.0 .10 dom=.45
+CHC 6.9 0 tg dom=.75
+WLG 6.4 0 B dom=.85
+ZQN 2.6 0 T dom=.70
+DUD 1.0 0 dom=.97
 NAN 2.3 .10 T
-PPT 1.5 0 T
-BOB 0.2 0 T
-NOU 0.5 0
+PPT 1.5 0 T dom=.40
+BOB 0.2 0 T dom=1
+NOU 0.5 0 dom=.35
 POM 1.4 0
 APW 0.4 0 T
 TBU 0.3 0 T
-RAR 0.3 0 T
+RAR 0.3 0 T dom=.75
 VLI 0.4 0 T
 HIR 0.3 0
 ROR 0.15 0 T
-SPN 0.8 0 T
+SPN 0.8 0 TG dom=.15
 MAJ 0.1 0
 TRW 0.1 0
 
 # ───────────── Africa ─────────────
-JNB 21.7 .20 B
-CPT 10.9 0 T
-DUR 6.1 0
-PLZ 1.7 0
-CAI 26.0 .15
-HRG 7.0 0 TW
-SSH 6.0 0 TW
-LXR 1.5 0 TW
-ASW 1.0 0 TW
-HBE 2.5 0
-CMN 10.3 .35
-RAK 6.4 0 T
-AGA 2.2 0 TW
-TNG 1.5 0
-FEZ 1.4 0 t
-ALG 8.0 .03
-ORN 1.9 0
+JNB 21.7 .20 BG dom=.58
+CPT 10.9 0 TG dom=.78
+DUR 6.1 0 dom=.94
+PLZ 1.7 0 dom=1
+CAI 26.0 .15 dom=.15
+HRG 7.0 0 TWg dom=.15
+SSH 6.0 0 TWg dom=.20
+LXR 1.5 0 TW dom=.65
+ASW 1.0 0 TW dom=.95
+HBE 2.5 0 dom=.10
+CMN 10.3 .35 dom=.12
+RAK 6.4 0 Tg dom=.05
+AGA 2.2 0 TWg dom=.08
+TNG 1.5 0 dom=.10
+FEZ 1.4 0 t dom=.08
+ALG 8.0 .03 dom=.22
+ORN 1.9 0 dom=.35
 TUN 6.2 0
 DJE 2.3 0 T
 NBE 1.5 0 T
 MJI 1.2 0
 ADD 12.1 .70
-NBO 8.0 .30
-MBA 1.6 0 T
-DAR 2.5 0
-ZNZ 1.3 0 T
-JRO 0.9 0 T
+NBO 8.0 .30 dom=.28
+MBA 1.6 0 Tg dom=.85
+DAR 2.5 0 dom=.45
+ZNZ 1.3 0 Tg dom=.40
+JRO 0.9 0 Tg dom=.55
 EBB 1.9 0
 KGL 1.0 .10
 BJM 0.3 0
-LOS 8.0 .05 B
-ABV 5.0 0
-PHC 1.0 0
-KAN 0.6 0
+LOS 8.0 .05 B dom=.60
+ABV 5.0 0 g dom=.85
+PHC 1.0 0 dom=.95
+KAN 0.6 0 dom=.85
 ACC 3.4 .05
 ABJ 2.3 .15
 DSS 2.8 .05
@@ -699,7 +704,7 @@ WVB 0.2 0
 GBE 0.5 0
 MUB 0.5 0 T
 MRU 3.9 0 TW
-RUN 2.5 0 t
+RUN 2.5 0 t dom=.80
 SEZ 1.2 0 TW
 TNR 0.9 0
 NOS 0.4 0 T

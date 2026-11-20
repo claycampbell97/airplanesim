@@ -1,0 +1,321 @@
+# How much people travel between countries: the cultural, family, holiday and
+# business ties that decide where demand goes.
+#
+# Each line is a country followed by partners and volumes:
+#   GB  ES 44  IT 16
+# means about 44 million air passengers a year travel between the United Kingdom
+# and Spain (both directions, true origin to destination: people changing planes at
+# a hub count for the countries they start and end in, not for the hub).
+#
+# Territories count with their parent country (Guadeloupe and Réunion with FR,
+# Puerto Rico and Guam with US, Greenland with DK). Every pair is listed once.
+#
+# These are approximate game-balance inputs drawn from memory of public tourism and
+# traffic statistics of about 2019, not statistics themselves. The country ties in
+# src/sim/data/ties.generated.ts are fitted to them by `npm run data:ties`; pairs
+# that are not listed fall back on shared languages, blocs, regions and distance.
+
+# ───────────── United Kingdom and Ireland ─────────────
+GB  ES 44  US 19  IT 16  DE 13.5  IE 13  FR 12  PT 9.5  GR 9  PL 8  NL 7  TR 7  CH 7
+GB  IN 5  AE 4  RO 3.5  CA 3.5  CY 3  DK 3  AU 3  NO 2.7  SE 2.5  AT 2.3  PK 2
+GB  HU 1.8  CZ 1.8  BE 1.5  BG 1.5  MT 1.5  MA 1.5  ZA 1.6  HK 1.6  TH 2.0  CN 1.8
+GB  HR 1.3  JP 1.3  IL 1.2  RU 1.2  IS 1.0  LT 1.0  EG 1.0  NG 1.0  SG 1.0  MX 1.0
+GB  FI 0.8  SK 0.8  LV 0.7  SA 0.7  TN 0.6  NZ 0.6  BD 0.6  BR 0.6  KR 0.7  MY 0.5
+GB  JM 0.5  BB 0.5  LK 0.5  PH 0.5  AL 0.5  QA 0.4  GH 0.4  KE 0.4  UA 0.4  LU 0.4
+GB  DO 0.3  CU 0.3  KW 0.3  SI 0.3  RS 0.3  EE 0.3  VN 0.3  ID 0.3  CV 0.3  MU 0.3
+GB  MV 0.25  AR 0.2  BH 0.2  JO 0.2  LB 0.2  ME 0.2  IR 0.2  OM 0.3  DZ 0.3
+GB  TZ 0.15  ZW 0.15  TT 0.15  LC 0.15  AG 0.15  CR 0.15  CL 0.15  CO 0.15  PE 0.1
+GB  UG 0.1  ZM 0.05  GM 0.1  SC 0.1  BM 0.1  ET 0.2  KY 0.05  BS 0.05  SL 0.05  RW 0.05
+GB  XK 0.15  MK 0.1  BA 0.05  GE 0.1  AZ 0.1  KZ 0.1  UZ 0.05  NP 0.15  BN 0.05  NA 0.03  BW 0.03
+IE  ES 4.5  FR 2.5  DE 2  US 3.5  IT 1.8  NL 1.5  PT 1.2  PL 1.3  CA 0.7  TR 0.6  GR 0.5
+IE  BE 0.5  CH 0.5  AE 0.4  LT 0.4  AT 0.3  DK 0.3  HU 0.3  CZ 0.3  RO 0.3  SE 0.2  HR 0.3
+IE  AU 0.3  LV 0.2  MT 0.2  BG 0.2  NO 0.15  MA 0.2  IS 0.1  IN 0.2  FI 0.1  CN 0.15  BR 0.1  CY 0.1
+
+# ───────────── Western Europe ─────────────
+DE  ES 30  TR 15  IT 14  GR 8  FR 7  CH 5.5  AT 5  PT 5  RU 4  PL 3.5  US 9  EG 3
+DE  NL 2.5  SE 2.5  DK 2.5  RO 2.5  HR 2  AE 2  CN 2.2  BG 1.8  HU 1.8  NO 1.5  FI 1.5  IN 1.5
+DE  CA 1.5  XK 1.3  MA 1.3  TN 1.2  RS 1.2  TH 1.7  JP 1.2  IL 1.6  BE 1.0  UA 1.0  KR 0.9
+DE  CY 0.8  BR 0.7  MX 0.7  CZ 0.6  MT 0.6  ZA 0.6  DO 0.6  IS 0.5  LV 0.5  MK 0.5  AL 0.5  SG 0.5
+DE  LB 0.5  IR 0.5  VN 0.5  LT 0.4  CU 0.4  AU 0.4  HK 0.4  GE 0.4  KZ 0.4  SA 0.4  BA 0.3
+DE  DZ 0.3  IQ 0.3  JO 0.3  AR 0.3  EE 0.3  SK 0.2  SI 0.2  LU 0.3  CO 0.25  MV 0.25  CV 0.2
+DE  NA 0.2  KE 0.15  LK 0.2  PK 0.2  NG 0.2  ID 0.2  NZ 0.2  AM 0.2  CR 0.2  MU 0.2  ET 0.2
+DE  TW 0.2  CL 0.15  SC 0.15  MY 0.15  PE 0.1  GH 0.1  TZ 0.1  JM 0.1  ME 0.15  BY 0.15  AZ 0.15  UZ 0.1  OM 0.2  QA 0.2  KW 0.15  PH 0.2
+FR  ES 14  IT 11  PT 7  MA 6  DZ 5  TN 3.5  US 7  NL 3  CH 3  GR 3  TR 3  CA 2.0
+FR  PL 2  CN 2.0  IL 1.6  AT 1.5  DK 1.5  SE 1.5  RO 1.5  RU 1.5  TH 1.5  JP 1.2  AE 1.2
+FR  NO 1.0  HU 1.0  CZ 1.0  BR 1.0  SN 1.0  MU 1.0  EG 0.9  LB 0.9  HR 0.8  BE 0.8  MX 0.8
+FR  IN 0.8  CI 0.8  MG 0.6  FI 0.6  DO 0.6  KR 0.7  MT 0.5  BG 0.5  ML 0.5  CM 0.5  SA 0.5  VN 0.5
+FR  AR 0.4  SG 0.4  HK 0.4  SX 0.4  AU 0.5  ZA 0.3  GA 0.3  CG 0.3  CU 0.3  CO 0.3  AM 0.3
+FR  BF 0.25  CL 0.25  CY 0.2  LU 0.2  NG 0.2  GN 0.2  BJ 0.2  KM 0.2  PE 0.2  LK 0.2  ID 0.2  UA 0.4
+FR  CV 0.15  CD 0.15  TG 0.15  SC 0.15  MV 0.15  KE 0.15  CR 0.15  TW 0.15  IS 0.2  RS 0.3  AL 0.15
+FR  NE 0.1  MR 0.1  DJ 0.1  ET 0.1  AO 0.1  PA 0.1  TZ 0.05  EC 0.05  VE 0.05  GQ 0.05  GH 0.05
+FR  LV 0.15  LT 0.15  EE 0.1  SK 0.1  SI 0.15  ME 0.1  GE 0.15  QA 0.2  KW 0.1  JO 0.15  IR 0.15  IQ 0.05  PH 0.15  MY 0.15  NZ 0.18  LC 0.05  HN 0.02
+FR  VU 0.07  FJ 0.05
+ES  IT 16  NL 8  BE 5.5  PT 5  CH 5  SE 4  US 4.5  DK 3.5  NO 3.5  MA 3.5  PL 3  RO 2.5
+ES  RU 2  AT 2  FI 1.8  CO 1.3  AR 1.2  MX 1.2  TR 1.2  GR 1.0  CZ 1.0  BR 1.0  IL 0.9  CN 1.0
+ES  HU 0.8  DO 0.8  KR 0.8  BG 0.7  PE 0.7  EC 0.7  LU 0.6  DZ 0.6  CA 0.6  CU 0.6  JP 0.6  AE 0.5
+ES  CL 0.5  IS 0.4  MT 0.4  VE 0.4  UA 0.6  LT 0.3  LV 0.2  EE 0.15  SK 0.3  HR 0.3  SI 0.1
+ES  BO 0.3  UY 0.3  CR 0.3  PA 0.3  SN 0.2  PY 0.2  GQ 0.15  PK 0.15  IN 0.25  TH 0.4  AU 0.15
+ES  MR 0.1  HN 0.1  GT 0.1  CV 0.08  GM 0.05  SV 0.05  CI 0.03  ZA 0.05  EG 0.15  TN 0.2  RS 0.1  AL 0.05
+ES  GE 0.1  AM 0.1  SA 0.15  QA 0.15  JO 0.1  LB 0.05  SG 0.1  HK 0.1  PH 0.1  NG 0.05  GH 0.03  CY 0.1  NI 0.03
+IT  RO 4.5  NL 4  BE 3.5  GR 3  CH 3  PL 3  US 5  AL 2.5  PT 2.5  RU 2  TR 2  MA 1.5  EG 1.5
+IT  MT 1.5  DK 1.5  SE 1.3  IL 1.3  AT 1.2  CZ 1.2  HU 1.2  CN 1.5  TN 1.0  UA 1.0  CA 1.0  NO 0.8
+IT  BG 0.8  AE 0.8  JP 0.8  BR 0.7  AR 0.6  KR 0.6  TH 0.55  FI 0.5  HR 0.4  IN 0.4  AU 0.4  LU 0.3
+IT  SN 0.2  DZ 0.3  CU 0.3  MX 0.3  MV 0.25  LV 0.3  LT 0.3  EE 0.1  SK 0.3  SI 0.05  RS 0.3  XK 0.2  MK 0.15  BA 0.05  ME 0.05
+IT  PK 0.2  BD 0.2  LK 0.2  PH 0.2  DO 0.2  ET 0.2  IS 0.15  TZ 0.15  CL 0.15  CY 0.15  GE 0.15  AM 0.1  LB 0.15  JO 0.15  SA 0.2  QA 0.2  IR 0.1
+IT  KE 0.1  SC 0.1  MU 0.1  NG 0.1  CO 0.1  PE 0.1  CV 0.1  ZA 0.1  HK 0.15  SG 0.15  GH 0.05  CI 0.05  MG 0.05  EC 0.05  VE 0.05  LY 0.02  AG 0.02
+NL  TR 3.5  PT 2.5  GR 2.5  US 2.5  CH 1.8  DK 1.5  SE 1.5  NO 1.5  PL 1.5  MA 1.0  AT 1.0  HU 0.8
+NL  CZ 0.8  RO 0.8  FI 0.7  CN 0.8  CW 0.6  CA 0.6  AE 0.5  ID 0.5  RU 0.5  EG 0.5  IL 0.5  TH 0.5
+NL  ZA 0.4  IN 0.4  JP 0.4  BR 0.3  AW 0.3  SR 0.3  MX 0.3  SG 0.3  HR 0.4  BG 0.4  KE 0.2  SX 0.2
+NL  HK 0.2  KR 0.2  AU 0.2  GH 0.15  NG 0.15  TZ 0.15  CV 0.15  CO 0.15  PE 0.15  EC 0.15  PA 0.15  MY 0.15  TW 0.15
+NL  AR 0.15  DO 0.15  CU 0.1  CR 0.1  UG 0.08  GM 0.05  CL 0.05  MU 0.05  RW 0.03  AO 0.03  NA 0.03  JM 0.03  BE 0.1
+NL  MT 0.3  CY 0.2  IS 0.3  LV 0.2  LT 0.2  EE 0.15  SK 0.05  SI 0.1  RS 0.2  UA 0.4  AL 0.1  GE 0.1  LU 0.1  TN 0.2  JO 0.1  LB 0.1  SA 0.15  QA 0.1  KW 0.1  IR 0.15  PK 0.05  LK 0.05  PH 0.1  VN 0.1
+BE  TR 1.8  PT 1.5  GR 1.5  MA 1.3  CH 0.9  PL 0.9  US 0.8  RO 0.7  TN 0.5  EG 0.4  IL 0.4  AT 0.4
+BE  DK 0.4  SE 0.4  HU 0.4  CZ 0.3  BG 0.4  HR 0.3  CA 0.3  DZ 0.25  CD 0.2  CN 0.25  TH 0.25  NO 0.25  FI 0.2
+BE  CM 0.15  SN 0.15  DO 0.15  AE 0.3  RU 0.3  IN 0.2  CI 0.1  GH 0.1  RW 0.1  CV 0.1  MX 0.1  BR 0.1  JP 0.15
+BE  UG 0.08  GN 0.05  GM 0.05  SL 0.05  LR 0.05  BJ 0.05  TG 0.05  BF 0.05  BI 0.05  AO 0.03  TZ 0.03  MU 0.05
+BE  MT 0.2  CY 0.15  LV 0.1  LT 0.1  RS 0.1  AL 0.2  XK 0.1  MK 0.1  UA 0.2  GE 0.05  AM 0.1  LB 0.1  KE 0.05  CU 0.05
+LU  PT 0.8  CH 0.2  AT 0.15  GR 0.2  TR 0.2  PL 0.1  DK 0.1  SE 0.1  CV 0.05  HU 0.05  CZ 0.05  HR 0.1  MT 0.05
+CH  PT 3  AT 1.5  GR 1.5  TR 1.5  US 2.5  XK 1.0  RS 0.8  DK 0.7  SE 0.6  RU 0.6  HR 0.5  PL 0.5
+CH  IL 0.5  AE 0.5  EG 0.5  CN 0.6  TH 0.4  IN 0.4  CA 0.4  MA 0.4  HU 0.4  CZ 0.4  RO 0.3  NO 0.4  FI 0.3
+CH  TN 0.3  BR 0.3  JP 0.3  SG 0.3  MK 0.4  BA 0.2  ZA 0.2  HK 0.15  MX 0.1  MU 0.1  AR 0.1  DO 0.1  AL 0.2  BG 0.2
+CH  MV 0.08  KE 0.08  TZ 0.05  CO 0.05  CV 0.05  CR 0.05  SC 0.05  CU 0.05  MT 0.2  CY 0.2  IS 0.1  UA 0.2  LV 0.1  LT 0.05  ME 0.05  GE 0.05
+CH  LB 0.1  JO 0.05  SA 0.1  QA 0.1  KW 0.05  OM 0.05  KR 0.15  AU 0.1  LK 0.05  PK 0.03  IR 0.05  DZ 0.1
+AT  TR 1.5  GR 1.2  RU 0.6  US 0.6  EG 0.5  IL 0.5  RO 0.5  AE 0.4  RS 0.4  CN 0.3  TH 0.25  HR 0.2  BG 0.4
+AT  DK 0.4  SE 0.4  NO 0.2  FI 0.2  PL 0.4  CZ 0.05  HU 0.03  UA 0.4  CY 0.3  MT 0.2  XK 0.3  MK 0.25  BA 0.2  AL 0.2  ME 0.1
+AT  JP 0.2  KR 0.15  IN 0.15  CA 0.1  TW 0.1  MU 0.05  MV 0.05  TN 0.2  MA 0.15  IR 0.15  GE 0.15  AM 0.1  JO 0.1  LB 0.1  QA 0.1  LV 0.1  LT 0.1  IS 0.1
+PT  BR 2.0  US 1.5  PL 0.8  AO 0.8  CA 0.7  SE 0.7  DK 0.7  CV 0.5  NO 0.4  MA 0.5  MZ 0.25  CZ 0.2
+PT  HU 0.2  RO 0.3  FI 0.3  AT 0.3  TR 0.4  RU 0.3  IL 0.2  SN 0.15  VE 0.1  ST 0.1  MX 0.1  ZA 0.15  GR 0.1
+PT  AE 0.2  CN 0.15  IN 0.05  GN 0.03  GH 0.03  CI 0.05  MT 0.05  IS 0.05  BG 0.1  LT 0.05  LV 0.05  UA 0.3  TN 0.1  KR 0.1
+GR  CY 2.0  RU 1.5  SE 1.5  PL 1.3  DK 1.2  NO 1.2  US 1.2  IL 1.0  TR 1.0  CZ 0.9  FI 0.8  RO 0.6
+GR  HU 0.5  RS 0.4  CA 0.4  AL 0.3  EG 0.3  BG 0.2  AE 0.2  AU 0.2  UA 0.4  GE 0.2  AM 0.2  LB 0.2  JO 0.1  SK 0.2  LT 0.2  LV 0.1  EE 0.1  HR 0.05  SI 0.05  MT 0.1
+GR  CN 0.2  SA 0.1  QA 0.15  KW 0.05  MK 0.05  ME 0.03  BY 0.1  KZ 0.05
+CY  RU 1.5  IL 0.8  PL 0.4  LB 0.3  SE 0.3  DK 0.2  NO 0.2  FI 0.15  RO 0.3  BG 0.2  HU 0.15  CZ 0.2  UA 0.4
+CY  AE 0.2  EG 0.15  JO 0.15  RS 0.1  AM 0.1  GE 0.05  SK 0.1  LT 0.1  LV 0.1  EE 0.05  MT 0.05  QA 0.1  BH 0.05  KW 0.05  SA 0.03  BY 0.1
+MT  PL 0.3  TR 0.15  SE 0.15  DK 0.1  NO 0.1  HU 0.15  CZ 0.1  RO 0.1  BG 0.1  RS 0.1  TN 0.05  LY 0.03  AE 0.1  FI 0.05  RU 0.1  IL 0.05  LT 0.05  LV 0.05  UA 0.05  QA 0.05  EG 0.03
+
+# ───────────── Nordic countries ─────────────
+DK  NO 3.5  SE 3  PL 1.2  FI 1.2  TR 1.0  US 0.8  IS 0.7  TH 0.3  HR 0.3  LT 0.3  CZ 0.3  HU 0.25
+DK  RO 0.3  BG 0.25  LV 0.25  EE 0.15  RU 0.2  CN 0.3  AE 0.2  EG 0.2  JP 0.15  CA 0.15  RS 0.1  UA 0.15  IL 0.1  MA 0.15
+DK  LB 0.1  PK 0.05  IQ 0.05  IR 0.05  SG 0.1  IN 0.1  BA 0.05  XK 0.05  MK 0.05  AL 0.05  SK 0.03  SI 0.03  TN 0.05  QA 0.05
+NO  SE 3  PL 2.0  TR 0.8  US 0.8  FI 0.8  LT 0.6  LV 0.4  IS 0.3  TH 0.3  HR 0.3  CZ 0.2  HU 0.2
+NO  RO 0.2  BG 0.2  EE 0.2  RU 0.15  AE 0.15  PK 0.1  EG 0.1  RS 0.1  CN 0.1  CA 0.05  MA 0.1  UA 0.05  IL 0.05  QA 0.1  ET 0.03  BA 0.05  XK 0.05
+SE  FI 2.5  PL 1.5  TR 1.2  US 0.9  TH 0.6  RS 0.4  HR 0.4  EE 0.3  LV 0.3  LT 0.3  CZ 0.3  HU 0.3
+SE  RO 0.25  BG 0.25  RU 0.25  IS 0.2  CN 0.3  AE 0.2  IQ 0.2  IR 0.15  LB 0.15  EG 0.2  ET 0.1  BA 0.2  XK 0.15  MK 0.1  CA 0.1
+SE  IL 0.1  MA 0.1  TN 0.05  UA 0.1  CV 0.05  JP 0.1  IN 0.1  SG 0.05  QA 0.1  GM 0.03  SO 0.02  AL 0.05  GE 0.05
+FI  RU 0.5  TR 0.5  TH 0.3  EE 0.3  US 0.3  PL 0.3  JP 0.4  CN 0.4  LV 0.25  LT 0.15  CZ 0.2  HU 0.2
+FI  HR 0.15  BG 0.15  IS 0.1  AE 0.15  KR 0.1  HK 0.1  SG 0.05  IN 0.05  CA 0.03  RO 0.1  EG 0.05  UA 0.05  IL 0.05  QA 0.05
+IS  US 1.3  CA 0.3  PL 0.3  LT 0.05  LV 0.05  HU 0.03  CZ 0.03  CN 0.05
+
+# ───────────── Central and Eastern Europe, the Balkans ─────────────
+PL  UA 1.5  TR 1.3  EG 0.8  IL 0.8  US 0.8  BG 0.6  CZ 0.2  HU 0.3  HR 0.3  RO 0.2  GE 0.3  CA 0.3
+PL  AE 0.3  TN 0.3  LT 0.15  LV 0.15  EE 0.1  TH 0.2  AL 0.3  ME 0.15  CN 0.2  RU 0.3  BY 0.2  SK 0.05
+PL  DO 0.1  CU 0.05  MX 0.05  CV 0.08  TZ 0.05  MA 0.15  KZ 0.1  AM 0.1  JP 0.1  KR 0.15  IN 0.1  LK 0.05  QA 0.1  JO 0.1  RS 0.1  MK 0.05  XK 0.03  BA 0.03  SI 0.03
+CZ  RU 1.0  TR 0.5  EG 0.4  BG 0.5  IL 0.5  US 0.4  SK 0.2  HU 0.1  RO 0.2  HR 0.2  AE 0.3  UA 0.4
+CZ  KR 0.3  CN 0.3  TN 0.3  CA 0.1  TH 0.1  VN 0.1  RS 0.1  LV 0.1  LT 0.05  GE 0.1  AM 0.1  KZ 0.1  BY 0.1  QA 0.1  MU 0.03  TZ 0.03  AL 0.05  ME 0.05  MK 0.03
+HU  TR 0.6  IL 0.5  US 0.3  RO 0.3  EG 0.3  RU 0.3  BG 0.2  AE 0.3  UA 0.2  HR 0.1  SK 0.02  RS 0.05
+HU  CN 0.15  QA 0.15  KR 0.1  JO 0.1  GE 0.1  AL 0.1  XK 0.1  MK 0.1  ME 0.1  BA 0.05  LV 0.05  LT 0.05  EE 0.03  CA 0.05  TN 0.1  MA 0.1  KZ 0.03  AZ 0.05
+SK  TR 0.2  BG 0.15  EG 0.1  RU 0.05  AE 0.05  UA 0.05  HR 0.05  TN 0.05  IL 0.05  RS 0.02
+SI  TR 0.15  RS 0.1  RU 0.1  ME 0.05  MK 0.05  XK 0.05  BA 0.03  AL 0.03  EG 0.03  IL 0.05
+HR  TR 0.2  RS 0.1  RU 0.15  US 0.2  CA 0.1  KR 0.15  IL 0.1  BA 0.05  MK 0.05  XK 0.05  AE 0.1  QA 0.1  UA 0.1  LT 0.03  RO 0.05
+RO  TR 0.9  IL 0.5  US 0.2  AE 0.3  EG 0.3  BG 0.1  UA 0.1  QA 0.15  CA 0.1  RS 0.1  JO 0.05  LB 0.05  TN 0.1  CN 0.05  GE 0.05  RU 0.1
+BG  RU 1.0  TR 0.5  IL 0.4  UA 0.3  US 0.1  AE 0.15  QA 0.1  RS 0.05  BY 0.1  KZ 0.05  EG 0.05  LB 0.05  MK 0.03  GE 0.05  AM 0.05
+RS  ME 0.4  TR 0.5  RU 0.4  US 0.1  AE 0.2  QA 0.1  MK 0.05  BA 0.05  AL 0.05  EG 0.1  TN 0.05  IL 0.05  UA 0.03  CN 0.05  LB 0.03
+ME  TR 0.3  RU 0.5  UA 0.15  IL 0.1  BY 0.05  AZ 0.03  AL 0.02  MK 0.02
+BA  TR 0.4  AE 0.1  QA 0.05  KW 0.1  SA 0.05
+MK  TR 0.4  AE 0.05  QA 0.05
+AL  TR 0.4  US 0.1  XK 0.03  AE 0.1  EG 0.05  IL 0.05  SA 0.03  CA 0.03
+XK  TR 0.5  US 0.05
+UA  TR 3  EG 1.5  IL 0.8  GE 0.5  AE 0.6  AZ 0.3  AM 0.3  BY 0.4  US 0.3  CA 0.2  KZ 0.2  LV 0.2
+UA  LT 0.2  EE 0.1  TN 0.2  UZ 0.1  CN 0.2  QA 0.15  JO 0.1  LB 0.1  IN 0.1  TH 0.15  DO 0.1  LK 0.1  MV 0.03  TZ 0.05
+BY  RU 1.5  TR 0.3  EG 0.2  GE 0.15  IL 0.1  AE 0.1  KZ 0.1  LV 0.1  LT 0.1  AM 0.05  AZ 0.05  UZ 0.05  CN 0.1  TN 0.05
+LV  RU 0.4  TR 0.15  LT 0.1  EE 0.1  UZ 0.05  IL 0.1  EG 0.1  AE 0.05  GE 0.05  AM 0.05  AZ 0.05  KZ 0.03  US 0.05
+LT  TR 0.15  EE 0.05  IL 0.1  EG 0.1  GE 0.05  US 0.05  AE 0.03  KZ 0.03  BG 0.1
+EE  TR 0.1  RU 0.1  EG 0.05  BG 0.05  GE 0.03
+
+# ───────────── Turkey, Russia, the Caucasus and Central Asia ─────────────
+TR  RU 7  IR 2.5  SA 2.5  IQ 2  AZ 1.5  IL 1.5  AE 1.5  US 1.5  GE 1.0  KZ 1.0  EG 0.8  KW 0.8
+TR  LB 0.8  UZ 0.8  DZ 0.8  CN 0.9  JO 0.7  QA 0.6  MA 0.6  TN 0.5  TM 0.4  LY 0.4  KR 0.5  IN 0.4
+TR  NG 0.3  CA 0.3  AF 0.3  PK 0.5  ID 0.3  JP 0.25  ZA 0.15  TH 0.2  SD 0.2  ET 0.2  KE 0.2  MY 0.2
+TR  TJ 0.2  BD 0.2  SG 0.15  TZ 0.15  BR 0.15  NP 0.15  AU 0.15  UG 0.1  SO 0.1  CM 0.1  GH 0.1  CD 0.1  CI 0.1
+TR  SN 0.1  VN 0.1  CO 0.1  AR 0.1  MX 0.1  TW 0.1  HK 0.1  PH 0.1  MV 0.1  SC 0.08  BH 0.2  OM 0.15
+TR  MU 0.05  ML 0.05  BF 0.05  NE 0.05  GA 0.05  DJ 0.05  CU 0.05  PA 0.05  VE 0.05  MN 0.05  RW 0.03  MZ 0.03  AO 0.03  MG 0.03  GN 0.03  MR 0.03  CG 0.03  BJ 0.03  ER 0.03  LK 0.05  AM 0.03  SY 0.1  GM 0.02  SL 0.02  ZM 0.02  SS 0.02
+RU  UZ 3  AE 2.5  KZ 2.5  TJ 2.5  AM 2.5  CN 3  TH 3.0  AZ 1.8  IL 1.5  GE 1.2  EG 1.0
+RU  KR 1.5  VN 0.8  TN 0.8  US 0.6  IN 0.5  DO 0.4  JP 0.4  CU 0.3  TM 0.3  MV 0.2  MN 0.2  IR 0.2
+RU  LK 0.15  ID 0.15  SG 0.1  HK 0.1  MU 0.05  SC 0.08  QA 0.2  JO 0.15  LB 0.1  MA 0.15  CA 0.1  SA 0.05  TZ 0.1  MX 0.1  BH 0.05  KW 0.03  SY 0.05  AF 0.03  PH 0.05  MY 0.05  ZA 0.03
+KZ  AE 0.5  UZ 0.5  CN 0.5  KR 0.2  TH 0.2  GE 0.2  EG 0.2  IN 0.2  AZ 0.2  TJ 0.2  US 0.05  MY 0.05  MV 0.03  QA 0.05  SA 0.05  AM 0.03  MN 0.03  VN 0.05
+UZ  KR 0.4  AE 0.5  CN 0.2  IN 0.2  SA 0.2  TJ 0.1  US 0.1  AZ 0.05  GE 0.05  EG 0.05  MY 0.05  TH 0.1  JP 0.05  IL 0.05  TM 0.03  AF 0.03  KW 0.03
+TJ  AE 0.2  IR 0.1  CN 0.05  IN 0.05  SA 0.05  AF 0.03
+TM  AE 0.2  CN 0.05  IN 0.03  TH 0.02
+AM  AE 0.3  GE 0.1  IR 0.3  US 0.1  EG 0.1  LB 0.1  QA 0.05  IL 0.05  SY 0.05
+AZ  AE 0.5  GE 0.2  IR 0.3  IL 0.1  SA 0.1  KW 0.2  QA 0.1  PK 0.1  IN 0.05  CN 0.1  IQ 0.1  US 0.03  TM 0.03  BH 0.03
+GE  IL 0.3  AE 0.4  IR 0.3  SA 0.2  KW 0.2  QA 0.1  EG 0.05  CN 0.1  JO 0.1  IQ 0.1  BH 0.05  OM 0.03  US 0.05  IN 0.05  LB 0.03
+
+# ───────────── The Gulf and the Middle East ─────────────
+SA  EG 9  AE 7  PK 5  IN 5  KW 3  ID 2.5  BD 2.5  JO 2  BH 2  PH 1.5  SD 1.5  QA 1.0
+SA  LB 0.8  OM 0.8  MY 0.8  NP 0.8  ET 0.6  US 0.6  LK 0.6  IQ 0.5  MA 0.5  DZ 0.5  NG 0.5  TN 0.3
+SA  SY 0.3  IR 0.3  CN 0.3  KE 0.2  AF 0.2  ZA 0.1  TH 0.1  SG 0.1  SN 0.1  CA 0.1  LY 0.05  ML 0.05  DJ 0.05  SO 0.05  ER 0.05  BN 0.05  MU 0.03  AU 0.1  KR 0.1  JP 0.05  MV 0.05  TZ 0.05  UG 0.03  GH 0.03  CM 0.03  NE 0.03  GN 0.03  MR 0.03  CI 0.03  BF 0.02  GM 0.02  KM 0.02  HK 0.03  VN 0.03  BR 0.02
+AE  IN 17  PK 7  EG 4  KW 4  OM 4  BH 3  BD 2.5  PH 2.5  IR 2.5  JO 2  LB 2  LK 2  IQ 2
+AE  NP 1.5  QA 1.5  US 1.5  CN 2.5  TH 1.0  AU 1.0  SD 1.0  ET 0.8  KE 0.8  ZA 0.8  AF 0.8  NG 0.7
+AE  ID 0.6  SG 0.5  MY 0.5  SY 0.5  TZ 0.4  CA 0.4  HK 0.4  MV 0.4  MA 0.4  KR 0.5  JP 0.4  UG 0.3  SC 0.3
+AE  MU 0.3  SO 0.3  TN 0.3  DZ 0.3  VN 0.3  GH 0.2  BR 0.15  TW 0.15  NZ 0.2  ZW 0.15  ZM 0.15  RW 0.1  CD 0.1
+AE  AO 0.1  MM 0.1  DJ 0.1  SN 0.1  CI 0.1  CM 0.05  LY 0.05  ER 0.05  SS 0.05  BN 0.05  AR 0.05  MX 0.05  KM 0.03  MZ 0.03  GN 0.03  CG 0.03
+QA  IN 4  PK 1.2  NP 1.2  EG 1.0  PH 1.0  KW 1.0  BD 0.8  LK 0.8  OM 0.8  JO 0.6  LB 0.5  BH 0.5
+QA  SD 0.4  IR 0.4  US 0.3  TH 0.3  TN 0.2  KE 0.2  MY 0.2  ID 0.3  ET 0.1  NG 0.15  TZ 0.15  SC 0.15  CN 0.15  VN 0.15
+QA  ZA 0.1  UG 0.1  AU 0.3  MV 0.15  MA 0.2  DZ 0.1  IQ 0.2  SY 0.05  JP 0.1  KR 0.1  SG 0.1  HK 0.05  CA 0.1  NZ 0.1  GH 0.05  RW 0.05  MZ 0.05  ZM 0.03  ZW 0.03  NA 0.03  BW 0.02  SO 0.05  DJ 0.03  MM 0.05  KH 0.05  BR 0.05  AF 0.05
+KW  EG 3  IN 3  BH 1.0  LB 0.8  JO 0.8  PK 0.8  PH 0.8  BD 0.6  IR 0.6  IQ 0.6  LK 0.5  OM 0.4
+KW  TH 0.15  NP 0.2  ET 0.15  SD 0.1  SY 0.2  MA 0.05  TN 0.05  US 0.2  CN 0.05  ID 0.05  MY 0.05
+BH  IN 2  EG 0.7  PK 0.5  OM 0.4  PH 0.4  JO 0.3  BD 0.3  LB 0.15  IQ 0.2  IR 0.1  SD 0.1  TH 0.1  LK 0.15  NP 0.1  ET 0.05  MA 0.03
+OM  IN 4  PK 1.5  BD 1.0  EG 0.6  LK 0.4  PH 0.3  IR 0.3  TZ 0.2  NP 0.2  TH 0.15  JO 0.15  SD 0.1  KE 0.05  MY 0.1  ID 0.1  LB 0.05  IQ 0.05  CN 0.05
+JO  EG 1.5  LB 0.6  IQ 0.6  US 0.3  LY 0.1  SD 0.1  SY 0.1  CA 0.1  TN 0.05  MA 0.05  DZ 0.05  IL 0.1  TH 0.05  CN 0.05
+LB  EG 0.8  IQ 0.6  ET 0.2  US 0.2  NG 0.1  CI 0.15  CA 0.15  AU 0.15  BR 0.1  GH 0.05  SY 0.05  IR 0.1  TN 0.05  MA 0.05  DZ 0.05  SD 0.03
+IQ  IR 1.5  EG 0.5  SY 0.3  IN 0.1  CN 0.05  US 0.05
+IR  AF 0.4  CN 0.3  IN 0.3  MY 0.2  TH 0.2  PK 0.1  SY 0.1  UZ 0.03  KZ 0.03
+IL  US 1.8  TH 0.4  CA 0.3  IN 0.2  ET 0.2  CN 0.3  ZA 0.1  AR 0.1  BR 0.1  MA 0.05  KE 0.03  JP 0.05  KR 0.1  HK 0.1  AU 0.1  MX 0.05  SC 0.03  TZ 0.05  PH 0.05
+SY  EG 0.2
+
+# ───────────── North Africa ─────────────
+MA  US 0.3  CA 0.3  TN 0.3  EG 0.3  SN 0.3  CI 0.3  ML 0.15  NG 0.15  GA 0.1  GN 0.1  BF 0.1  CM 0.1
+MA  GH 0.1  MR 0.1  BR 0.1  CG 0.05  CD 0.05  NE 0.05  BJ 0.05  TG 0.05  GM 0.05  LR 0.05  AO 0.05  SL 0.03  CV 0.03  GQ 0.03  CN 0.15  LY 0.05
+DZ  TN 0.5  CA 0.2  EG 0.15  SN 0.05  ML 0.05  MR 0.03  NE 0.03  BF 0.03  CN 0.1  LY 0.03
+TN  LY 0.5  EG 0.3  SN 0.1  CI 0.1  CA 0.1  ML 0.05  MR 0.05  BF 0.03  NE 0.03  CM 0.03  GN 0.03
+EG  SD 0.8  LY 0.6  US 0.6  CN 0.5  ET 0.3  IN 0.3  KE 0.2  ZA 0.2  NG 0.2  CA 0.2  SS 0.05  ER 0.05  UG 0.05  TZ 0.05  GH 0.05  DJ 0.03  RW 0.03  TH 0.1  MY 0.1  ID 0.1  JP 0.1  KR 0.1  PK 0.1  BD 0.05
+SD  ET 0.3  SS 0.15  KE 0.1  ER 0.03  IN 0.05  CN 0.05
+
+# ───────────── South Asia ─────────────
+IN  US 7  SG 5  TH 4.3  MY 3  LK 3  NP 2.5  BD 2  CA 1.5  AU 1.2  HK 1.0  CN 1.2  JP 0.8
+IN  MV 0.6  ID 0.5  VN 0.3  MU 0.3  KE 0.3  ZA 0.3  AF 0.3  KR 0.3  NZ 0.3  ET 0.2  TZ 0.2  NG 0.2
+IN  PH 0.2  BT 0.15  MM 0.15  TW 0.1  UG 0.05  SC 0.05  KH 0.05  FJ 0.03  GH 0.03  RW 0.02  MN 0.01  ZM 0.02  MZ 0.02  BN 0.02
+PK  CN 0.5  MY 0.4  TH 0.3  US 0.6  CA 0.4  AF 0.3  AU 0.15  LK 0.1  UZ 0.03  KE 0.03  ZA 0.03  JP 0.03  HK 0.03
+BD  MY 1.5  SG 1.0  TH 0.3  CN 0.5  US 0.3  NP 0.2  MV 0.2  LK 0.1  CA 0.1  AU 0.1  HK 0.2  JP 0.05  KR 0.05  MM 0.05  BT 0.03
+LK  MV 1.0  SG 0.6  MY 0.4  TH 0.2  CN 0.5  AU 0.4  JP 0.15  US 0.15  CA 0.15  SC 0.03  KR 0.1  HK 0.1  NP 0.02
+NP  MY 0.8  TH 0.2  CN 0.5  SG 0.15  HK 0.15  JP 0.2  KR 0.15  BT 0.1  AU 0.2  US 0.15
+MV  CN 0.55  SG 0.25  MY 0.15  TH 0.1  JP 0.08  KR 0.08  US 0.08  AU 0.05  HK 0.1
+AF  CN 0.03
+BT  TH 0.05  SG 0.02
+
+# ───────────── East Asia ─────────────
+CN  TH 20  JP 20  KR 20  HK 10.5  TW 10  SG 8.5  US 8.5  MY 6.5  VN 6  KH 4.5  ID 4  AU 3.6
+CN  PH 3.5  MO 3.5  CA 2.5  MM 1.5  LA 1.2  NZ 1.0  MN 0.4  MX 0.35  ET 0.3  ZA 0.3  BR 0.25
+CN  KE 0.2  NG 0.15  BN 0.1  FJ 0.1  MU 0.1  AO 0.1  TZ 0.1  AR 0.08  CL 0.08  PE 0.08  GH 0.05  UG 0.05  ZM 0.05  CD 0.05  CO 0.05  CU 0.05  PA 0.05  SC 0.03  PG 0.03  CM 0.03  SN 0.02
+JP  KR 18  TW 14  US 11  HK 6.5  TH 6  VN 2.9  SG 2.7  PH 2.6  AU 2.2  MY 1.9  ID 1.9  CA 1.2
+JP  MO 0.4  KH 0.4  MX 0.35  NZ 0.3  MM 0.3  BR 0.25  MN 0.1  LA 0.05  FJ 0.03  PW 0.05  PE 0.05  PG 0.02  ZA 0.03  KE 0.02  BN 0.02  AR 0.03  CL 0.02  ET 0.03
+KR  VN 9.7  US 6.6  PH 5  TH 4.9  TW 4.9  HK 3.4  MY 2.1  SG 1.8  MO 1.5  ID 1.3  AU 0.9  CA 0.9
+KR  KH 0.7  MN 0.45  LA 0.4  MM 0.3  NZ 0.2  PW 0.03  MX 0.2  BR 0.1  ET 0.03  KE 0.02  ZA 0.03  BN 0.05  FJ 0.03
+TW  HK 7  VN 2.6  TH 2.4  PH 1.7  SG 1.6  MY 1.6  US 2.8  MO 1.5  ID 1.0  CA 0.4  AU 0.4  KH 0.3  NZ 0.1  MM 0.1  PW 0.03  BN 0.03
+HK  TH 3.4  PH 3.5  SG 3.3  MY 1.8  VN 1.5  ID 1.5  US 2.5  AU 2  CA 1.2  KH 0.5  NZ 0.4  MM 0.15  ZA 0.1  BN 0.1  FJ 0.05  ET 0.03  MN 0.03  PG 0.03  MU 0.03
+MO  TH 0.7  PH 0.6  MY 0.5  VN 0.5  SG 0.3  ID 0.2  KH 0.2
+MN  US 0.02
+
+# ───────────── South-East Asia ─────────────
+SG  ID 9  MY 8  TH 4.5  AU 3.5  PH 3.5  VN 4  MM 1.0  KH 0.8  US 0.8  NZ 0.5  BN 0.4  LA 0.1  CA 0.1  ZA 0.1  TL 0.05  PG 0.05  FJ 0.05  MU 0.05
+MY  ID 6  TH 4.2  VN 2  AU 1.7  PH 1.2  KH 1.0  MM 0.8  BN 0.6  NZ 0.3  LA 0.1  US 0.2  CA 0.05  ZA 0.03  MU 0.05
+TH  VN 3.1  MM 2.0  KH 1.6  AU 1.6  US 2.3  ID 1.4  PH 1.1  LA 0.6  CA 0.55  NZ 0.2  ZA 0.2  BR 0.15  AR 0.1  ET 0.1  BN 0.1  KE 0.05  MU 0.05
+VN  KH 1.5  AU 0.9  US 0.8  PH 0.6  LA 0.5  ID 0.4  MM 0.3  CA 0.15  NZ 0.05
+PH  US 3  AU 0.9  CA 0.6  ID 0.3  NZ 0.15  BN 0.15  PG 0.05  PW 0.03  KH 0.1  MM 0.03
+ID  AU 3.2  US 0.3  TL 0.2  NZ 0.15  BN 0.15  KH 0.05  PG 0.03  ZA 0.02
+KH  LA 0.2  US 0.1  AU 0.1  MM 0.03
+MM  LA 0.02
+BN  AU 0.05
+TL  AU 0.1
+
+# ───────────── Australia, New Zealand and the Pacific ─────────────
+AU  NZ 7.5  US 3.0  FJ 1.3  PG 0.5  CA 0.5  ZA 0.35  VU 0.25  CL 0.2  WS 0.1  MU 0.1  TO 0.08  SB 0.08  AR 0.05  MX 0.05  BR 0.1  KE 0.03  PE 0.03  KI 0.01  MH 0.01
+NZ  US 0.9  FJ 0.6  WS 0.3  TO 0.25  CA 0.2  CL 0.1  ZA 0.1  VU 0.08  AR 0.05  SB 0.01  PG 0.02  BR 0.03
+FJ  US 0.3  WS 0.05  TO 0.05  VU 0.05  SB 0.03  KI 0.03  PG 0.03  CA 0.03
+PG  SB 0.03
+VU  SB 0.02
+WS  US 0.05  TO 0.01
+PW  US 0.05
+MH  US 0.05  KI 0.01
+
+# ───────────── North America ─────────────
+US  MX 38  CA 30  DO 9  BR 4.5  JM 4.5  CO 4  BS 3.5  CR 3  SV 2.5  GT 2.0  PE 1.8  AR 1.5
+US  EC 1.5  HN 1.5  AW 1.2  PA 1.2  CL 1.0  CU 1.0  KY 0.7  TT 0.6  NI 0.6  BZ 0.6  BM 0.5  SX 0.5
+US  ZA 0.5  NG 0.5  BB 0.4  ET 0.4  GH 0.3  VE 0.3  CW 0.3  AG 0.3  LC 0.3  GY 0.3  KE 0.2
+US  BO 0.2  UY 0.15  SN 0.15  PY 0.1  CV 0.1  TZ 0.1  LR 0.05  SR 0.05  UG 0.05  CM 0.05  CI 0.05  AO 0.05  ZM 0.03  ZW 0.03  RW 0.03  CD 0.03  SL 0.03  GM 0.02  MU 0.02  BW 0.02  NA 0.02  SO 0.03  DZ 0.05  TN 0.05  SD 0.03  LA 0.03  MM 0.05  TO 0.02
+CA  MX 4.5  CU 2.5  DO 1.5  JM 1.0  CR 0.4  CO 0.4  BS 0.3  BB 0.3  TT 0.3  BR 0.3  PA 0.2  AW 0.15
+CA  LC 0.15  PE 0.15  CL 0.15  SV 0.15  GY 0.15  AR 0.1  GT 0.1  HN 0.1  AG 0.1  BM 0.1  CW 0.1  SX 0.1  NG 0.1  ET 0.1  ZA 0.1  KY 0.05  KE 0.05  GH 0.05  EC 0.05  VE 0.03  BZ 0.05  NI 0.03  TZ 0.03  SN 0.03  CM 0.03  CI 0.03
+MX  CO 1.5  CU 1.0  PA 0.9  GT 0.8  PE 0.7  BR 0.7  CR 0.7  AR 0.6  CL 0.5  SV 0.4  HN 0.3  EC 0.3
+MX  DO 0.3  VE 0.2  NI 0.1  BO 0.1  BZ 0.05  UY 0.05  JM 0.05  PY 0.03
+
+# ───────────── The Caribbean ─────────────
+DO  CO 0.5  PA 0.5  AR 0.4  BR 0.3  CL 0.3  PE 0.2  VE 0.2  CU 0.1  CW 0.1  SX 0.1  EC 0.05  UY 0.03  JM 0.03  TT 0.03  AW 0.05  CR 0.05  GT 0.03
+CU  PA 0.5  AR 0.2  CO 0.2  VE 0.15  BR 0.1  JM 0.05  BS 0.05  CL 0.05  NI 0.03  PE 0.05  KY 0.02  TT 0.02  EC 0.03  GY 0.03  AO 0.02
+JM  KY 0.1  TT 0.1  PA 0.1  BB 0.05  CO 0.03  BS 0.03  CW 0.03  AG 0.02
+BS  PA 0.03  KY 0.01
+AW  CO 0.2  CW 0.2  VE 0.1  PA 0.1  BR 0.05  SX 0.03  PE 0.03  AR 0.03  CL 0.03  SR 0.02
+CW  CO 0.15  SX 0.1  SR 0.1  PA 0.1  VE 0.05  TT 0.03  BR 0.03  GY 0.02
+SX  PA 0.05  AG 0.05  TT 0.03  BB 0.02  LC 0.02
+BB  TT 0.2  LC 0.1  AG 0.1  GY 0.1  PA 0.02
+TT  GY 0.25  PA 0.1  SR 0.05  LC 0.05  AG 0.05  VE 0.05
+AG  LC 0.03
+GY  SR 0.05  PA 0.05  BR 0.03
+SR  BR 0.05
+
+# ───────────── Latin America ─────────────
+BR  AR 5  CL 2  UY 1.0  PY 0.8  PE 0.8  PA 0.8  CO 0.7  BO 0.5  ZA 0.2  AO 0.2  EC 0.15  VE 0.1  CV 0.05  CR 0.05  ET 0.05  NG 0.02  MZ 0.02
+AR  CL 2.5  UY 1.5  PE 1.0  PY 0.9  BO 0.6  CO 0.6  PA 0.5  EC 0.2  VE 0.1  ZA 0.03  CR 0.03
+CL  PE 2  CO 0.8  PA 0.4  BO 0.4  UY 0.3  EC 0.3  PY 0.2  VE 0.1  CR 0.03
+CO  PA 1.2  EC 1.2  PE 1.0  VE 0.5  CR 0.4  GT 0.15  SV 0.15  BO 0.15  HN 0.05  UY 0.05  PY 0.03  NI 0.03
+PE  EC 0.6  BO 0.6  PA 0.5  VE 0.1  CR 0.1  UY 0.05  PY 0.05  SV 0.05
+EC  PA 0.6  SV 0.1  VE 0.05  CR 0.05
+VE  PA 0.5  BO 0.03
+UY  PY 0.2  PA 0.2  BO 0.03
+PY  PA 0.2  BO 0.1
+BO  PA 0.2
+PA  CR 0.6  GT 0.3  SV 0.3  HN 0.2  NI 0.2  BZ 0.02
+CR  SV 0.3  GT 0.3  NI 0.2  HN 0.15
+SV  GT 0.3  HN 0.2  NI 0.15  BZ 0.02
+GT  HN 0.15  NI 0.05  BZ 0.03
+HN  NI 0.05  BZ 0.02
+
+# ───────────── Sub-Saharan Africa ─────────────
+ZA  ZW 0.8  NA 0.7  MZ 0.5  BW 0.5  ZM 0.5  MU 0.5  KE 0.4  AO 0.3  CD 0.3  NG 0.3  TZ 0.3  ET 0.2
+ZA  GH 0.15  UG 0.15  MG 0.1  SC 0.08  RW 0.08  CG 0.05  GA 0.05  CM 0.05  CI 0.03  SN 0.03
+NG  GH 0.6  ET 0.3  KE 0.2  CI 0.2  CM 0.2  SN 0.1  BJ 0.1  TG 0.1  LR 0.1  RW 0.1  GA 0.05
+NG  CD 0.05  CG 0.05  SL 0.05  GM 0.05  AO 0.05  GQ 0.05  ML 0.05  NE 0.05  BF 0.03
+GH  CI 0.2  KE 0.1  ET 0.1  TG 0.1  LR 0.1  SL 0.05  SN 0.05  BF 0.05  GM 0.03  RW 0.03  BJ 0.03
+KE  TZ 0.8  UG 0.7  ET 0.5  RW 0.3  SO 0.3  SS 0.2  CD 0.15  ZM 0.1  ZW 0.1  BI 0.1  MU 0.08  MZ 0.05
+KE  SC 0.05  MG 0.05  CM 0.05  KM 0.03  DJ 0.03  BW 0.03  AO 0.03  CG 0.03  SL 0.02  LR 0.02
+ET  DJ 0.2  UG 0.15  TZ 0.15  SS 0.15  SO 0.15  RW 0.1  ER 0.1  CD 0.1  ZM 0.05  ZW 0.05  CM 0.05  CI 0.05  AO 0.05
+ET  TG 0.05  MZ 0.03  SN 0.03  ML 0.03  MG 0.03  GA 0.03  CG 0.03  BI 0.03  BF 0.02  NE 0.02  SC 0.02  KM 0.02  BW 0.02  NA 0.02  BJ 0.03  GQ 0.03
+TZ  UG 0.2  RW 0.1  ZM 0.05  KM 0.05  CD 0.05  MZ 0.03  BI 0.03  ZW 0.03
+UG  RW 0.2  SS 0.15  CD 0.05  BI 0.05  SO 0.05
+RW  CD 0.1  BI 0.05  CG 0.03  GA 0.03  CM 0.03  SN 0.02
+SN  CI 0.3  ML 0.3  GN 0.15  GM 0.1  CV 0.1  MR 0.1  GA 0.08  BF 0.05  BJ 0.05  TG 0.05  CM 0.05  NE 0.03  CG 0.03  SL 0.03  LR 0.02
+CI  BF 0.3  ML 0.3  TG 0.15  BJ 0.15  GN 0.1  CM 0.1  GA 0.1  NE 0.05  CG 0.05  CD 0.05  LR 0.05  MR 0.03  SL 0.02
+ML  BF 0.15  NE 0.05  TG 0.05  GN 0.05  MR 0.05  GA 0.03  CG 0.03
+BF  TG 0.1  NE 0.1  BJ 0.05
+NE  TG 0.05  BJ 0.05
+BJ  TG 0.05  GA 0.05  CG 0.05  CM 0.05
+TG  GA 0.05  CM 0.05  CD 0.03
+GN  SL 0.03  GM 0.02
+GM  SL 0.02
+SL  LR 0.02
+CM  GA 0.15  CG 0.1  GQ 0.1  CD 0.05
+GA  CG 0.1  GQ 0.05  ST 0.03
+CG  AO 0.05  CD 0.02
+CD  AO 0.1  ZM 0.05
+AO  NA 0.1  MZ 0.05  ST 0.05  CV 0.03
+MZ  ZW 0.03
+ZM  ZW 0.05  NA 0.03  BW 0.03
+ZW  BW 0.03  NA 0.03
+NA  BW 0.03
+MU  MG 0.15  SC 0.05  KM 0.02  MZ 0.02
+MG  KM 0.05  SC 0.02
+DJ  SO 0.1  ER 0.02
+ST  GH 0.02
+
+# ───────────── Borders that are closed, or as good as ─────────────
+CY  TR 0.02
+IL  AE 1.0  EG 0.15  BH 0.1  SA 0.01  IQ 0.01  IR 0.01  SY 0.01  LB 0.01  KW 0.01  QA 0.01  OM 0.01
+IL  DZ 0.01  TN 0.01  LY 0.01  PK 0.01  BD 0.01  MY 0.01  ID 0.01
+AM  AZ 0.01
+IN  PK 0.05
+DZ  MA 0.02
+RS  XK 0.01
+RU  UA 0.05
+IR  US 0.01
+
+# ───────────── Others worth pinning down ─────────────
+GB  TW 0.2

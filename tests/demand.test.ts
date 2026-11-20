@@ -1,46 +1,91 @@
 import { describe, expect, it } from 'vitest';
-import { AIRPORTS, airportDistance } from '../src/sim/data/airports';
-import { baseDemand, classSplit, refFare, seasonFactor, topMarkets } from '../src/sim/demand';
+import { AIRPORT, AIRPORTS, airportDistance } from '../src/sim/data/airports';
+import { LATENT_DEMAND, baseDemand, classSplit, refFare, seasonFactor, topMarkets } from '../src/sim/demand';
+import { REFERENCE_ROUTES } from './routes.reference';
 
-const PAIRS: [string, string][] = [
-  ['LHR', 'JFK'], ['LHR', 'DXB'], ['LHR', 'SIN'], ['LHR', 'AMS'], ['LHR', 'EDI'], ['LHR', 'MAD'],
-  ['LAX', 'SFO'], ['JFK', 'LAX'], ['ATL', 'ORD'], ['SYD', 'MEL'], ['HND', 'CTS'], ['GMP', 'CJU'],
-  ['DEL', 'BOM'], ['PEK', 'SHA'], ['CGH', 'SDU'], ['JNB', 'CPT'], ['MAD', 'BCN'], ['SYD', 'LAX'],
-  ['LGW', 'PMI'], ['JFK', 'CUN'], ['CUN', 'PUJ'], ['INV', 'LHR'], ['BOI', 'SEA'], ['DXB', 'BOM'],
-  ['SIN', 'KUL'], ['HKG', 'TPE'], ['CDG', 'RUN'], ['YYZ', 'YVR'], ['GRU', 'EZE'], ['NBO', 'ADD'],
-  ['KEF', 'GOH'], ['PPT', 'LAX'], ['HLE', 'JNB'],
-];
+/** Millions of passengers a year the model puts between two airports, both directions. */
+const yearly = (a: string, b: string) => (baseDemand(a, b) * 730) / LATENT_DEMAND / 1e6;
+
+/** The model against the real routes in routes.reference.ts. */
+function compare() {
+  // The reference counts everyone on board; the model only those travelling between the two cities.
+  const local = (id: string) => 1 - 0.6 * (1 - AIRPORT[id].mass / AIRPORT[id].pax);
+  return REFERENCE_ROUTES.filter((r) => AIRPORT[r.a] && AIRPORT[r.b]).map((r) => {
+    const real = r.real * local(r.a) * local(r.b);
+    const model = yearly(r.a, r.b);
+    return { ...r, real, model, err: Math.log(Math.max(model, 1e-4) / real), dist: airportDistance(r.a, r.b), domestic: AIRPORT[r.a].home === AIRPORT[r.b].home };
+  });
+}
 
 describe('demand model', () => {
-  it('produces plausible volumes on well-known routes', () => {
+  it('puts real routes in the right league', () => {
+    const rows = compare();
+    const abs = rows.map((r) => Math.abs(r.err)).sort((a, b) => a - b);
+    const within = (f: number) => abs.filter((e) => e <= Math.log(f)).length / abs.length;
     if (process.env.CALIBRATE) {
-      console.log('pair        dist   pax/day   Y%   J%   F%   fareY  fareJ  fareF');
-      for (const [a, b] of PAIRS) {
-        const d = baseDemand(a, b);
-        const s = classSplit(a, b);
-        const f = refFare(a, b);
-        console.log(
-          `${a}-${b}  ${airportDistance(a, b).toFixed(0).padStart(6)}  ${d.toFixed(0).padStart(7)}  ${(s[0] * 100).toFixed(0).padStart(3)}  ${(s[1] * 100).toFixed(1).padStart(4)}  ${(s[2] * 100).toFixed(1).padStart(4)}  ${f[0].toFixed(0).padStart(5)}  ${f[1].toFixed(0).padStart(5)}  ${f[2].toFixed(0).padStart(5)}`,
-        );
-      }
-      for (const hub of ['LHR', 'JFK', 'SIN', 'DEN', 'BOI', 'NBO', 'INV']) {
+      const pct = (x: number) => (x * 100).toFixed(0) + '%';
+      console.log(`${rows.length} routes: median error x${Math.exp(abs[Math.floor(abs.length / 2)]).toFixed(2)}, within x1.5 ${pct(within(1.5))}, x2 ${pct(within(2))}, x3 ${pct(within(3))}, bias ${(rows.reduce((n, r) => n + r.err, 0) / rows.length).toFixed(2)}`);
+      const group = (name: string, f: (r: (typeof rows)[number]) => boolean) => {
+        const g = rows.filter(f);
+        const a = g.map((r) => Math.abs(r.err)).sort((x, y) => x - y);
+        if (g.length) console.log(`  ${name.padEnd(26)} n=${String(g.length).padStart(3)} median x${Math.exp(a[Math.floor(a.length / 2)]).toFixed(2)} bias ${(g.reduce((n, r) => n + r.err, 0) / g.length).toFixed(2)}`);
+      };
+      group('domestic', (r) => r.domestic);
+      group('international < 1500 km', (r) => !r.domestic && r.dist < 1500);
+      group('international 1500-3500', (r) => !r.domestic && r.dist >= 1500 && r.dist < 3500);
+      group('international 3500-6500', (r) => !r.domestic && r.dist >= 3500 && r.dist < 6500);
+      group('international > 6500', (r) => !r.domestic && r.dist >= 6500);
+      group('a resort at one end', (r) => AIRPORT[r.a].leisure >= 0.8 || AIRPORT[r.b].leisure >= 0.8);
+      group('gateway to gateway', (r) => !r.domestic && AIRPORT[r.a].gateway === 1 && AIRPORT[r.b].gateway === 1);
+      const sorted = [...rows].sort((x, y) => y.err - x.err);
+      const fmt = (r: (typeof rows)[number]) => `${r.a}-${r.b} ${r.model.toFixed(2)} vs ${r.real.toFixed(2)}`;
+      console.log('most over: ' + sorted.slice(0, 40).map(fmt).join(', '));
+      console.log('most under: ' + sorted.slice(-40).reverse().map(fmt).join(', '));
+      for (const hub of (process.env.HUBS ?? 'MAN,LHR,DUB,PMI,JFK,DEN,CUN,DXB,SIN,SYD,DEL,HND,GRU,NBO,BOI').split(',')) {
         const total = AIRPORTS.reduce((n, a) => n + baseDemand(hub, a.id), 0);
-        const actual = (AIRPORTS.find((a) => a.id === hub)!.mass * 1e6) / 2 / 365;
-        console.log(`${hub}: model total ${total.toFixed(0)}/day vs local departures ${actual.toFixed(0)}/day; top: ` +
-          topMarkets(hub, 8).map((m) => `${m.airport.id} ${m.demand.toFixed(0)}`).join(', '));
+        const top = topMarkets(hub, 25);
+        console.log(`${hub} (top 25 = ${((top.reduce((n, m) => n + m.demand, 0) / total) * 100).toFixed(0)}% of its traffic): ` + top.map((m) => `${m.airport.id} ${yearly(hub, m.airport.id).toFixed(2)}`).join(', '));
       }
-      for (const hub of ['SYD', 'PPT', 'HNL', 'DXB', 'DOH', 'CUN', 'MLE', 'KEF', 'ANC', 'GRU', 'JNB', 'DEL', 'PVG', 'HND', 'CDG', 'IST', 'YYZ', 'MEX']) {
-        console.log(`${hub}: ` + topMarkets(hub, 10).map((m) => `${m.airport.id} ${m.demand.toFixed(0)}`).join(', '));
-      }
-      const ranked: [string, number][] = [];
-      for (let i = 0; i < AIRPORTS.length; i++) for (let j = i + 1; j < AIRPORTS.length; j++) ranked.push([AIRPORTS[i].id + '-' + AIRPORTS[j].id, baseDemand(AIRPORTS[i].id, AIRPORTS[j].id)]);
-      ranked.sort((x, y) => y[1] - x[1]);
-      console.log('top 40: ' + ranked.slice(0, 40).map((r) => `${r[0]} ${r[1].toFixed(0)}`).join(', '));
-      const all: number[] = [];
-      for (let i = 0; i < AIRPORTS.length; i++) for (let j = i + 1; j < AIRPORTS.length; j++) all.push(baseDemand(AIRPORTS[i].id, AIRPORTS[j].id));
-      all.sort((x, y) => y - x);
-      console.log(`pairs: ${all.length}; >5000: ${all.filter((x) => x > 5000).length}; >1000: ${all.filter((x) => x > 1000).length}; >300: ${all.filter((x) => x > 300).length}; >100: ${all.filter((x) => x > 100).length}; world total/day: ${(all.reduce((a, b) => a + b, 0) * 2).toFixed(0)}`);
     }
+    // Most routes within a factor of two of the real thing, nearly all within three.
+    expect(Math.exp(abs[Math.floor(abs.length / 2)])).toBeLessThan(1.7);
+    expect(within(2)).toBeGreaterThan(0.65);
+    expect(within(3)).toBeGreaterThan(0.8);
+  });
+
+  it('sends people where they really go', () => {
+    const rank = (from: string, to: string) => topMarkets(from, AIRPORTS.length).findIndex((m) => m.airport.id === to) + 1;
+    // Manchester flies to Dublin, the Mediterranean and the hubs next door: not to Denver or Jeddah.
+    expect(rank('MAN', 'DUB')).toBeLessThanOrEqual(3);
+    for (const sun of ['PMI', 'AGP', 'ALC']) expect(rank('MAN', sun)).toBeLessThanOrEqual(12);
+    for (const m of topMarkets('MAN', 12)) expect(m.dist).toBeLessThan(3500);
+    expect(rank('MAN', 'JED')).toBeGreaterThan(60);
+    expect(baseDemand('MAN', 'DEN')).toBeLessThan(baseDemand('MAN', 'DUB') / 20);
+    expect(baseDemand('MAN', 'MNL')).toBeLessThan(baseDemand('MAN', 'DUB') / 10);
+    // Heathrow is the gateway: New York is among its biggest markets, and far bigger than from Manchester.
+    expect(rank('LHR', 'JFK')).toBeLessThanOrEqual(5);
+    expect(baseDemand('LHR', 'JFK')).toBeGreaterThan(baseDemand('MAN', 'JFK') * 3);
+    // Family ties, old empires and migrant workers.
+    expect(baseDemand('LHR', 'DEL')).toBeGreaterThan(baseDemand('LHR', 'PEK') * 2);
+    expect(baseDemand('CDG', 'ALG')).toBeGreaterThan(baseDemand('CDG', 'CAI') * 2);
+    expect(baseDemand('MAD', 'BOG')).toBeGreaterThan(baseDemand('FRA', 'BOG') * 2);
+    expect(baseDemand('DXB', 'BOM')).toBeGreaterThan(baseDemand('DXB', 'PVG'));
+    expect(baseDemand('COK', 'DXB')).toBeGreaterThan(baseDemand('COK', 'SIN') * 1.2);
+    // Holidays: the north flies to the sun.
+    expect(baseDemand('MAN', 'PMI')).toBeGreaterThan(baseDemand('MAN', 'FRA') * 2);
+    expect(baseDemand('DUS', 'AYT')).toBeGreaterThan(baseDemand('DUS', 'CDG'));
+    expect(baseDemand('YYZ', 'CUN')).toBeGreaterThan(baseDemand('YYZ', 'DEN') * 2);
+    // Trains: nobody flies from London to Manchester or from Paris to Lyon.
+    expect(baseDemand('LHR', 'MAN')).toBeLessThan(baseDemand('LHR', 'EDI') / 10);
+    expect(baseDemand('ORY', 'LYS')).toBeLessThan(baseDemand('ORY', 'NCE') / 4);
+    // Water: islands fly.
+    expect(baseDemand('MAN', 'BFS')).toBeGreaterThan(baseDemand('MAN', 'EDI') * 2);
+    // Gateways and domestic hubs.
+    expect(baseDemand('JFK', 'LHR')).toBeGreaterThan(baseDemand('DEN', 'LHR') * 4);
+    expect(baseDemand('NRT', 'LAX')).toBeGreaterThan(baseDemand('ITM', 'LAX') * 20);
+  });
+
+  it('produces plausible volumes on well-known routes', () => {
     // Dense trunk routes carry thousands a day, thin ones a few dozen.
     expect(baseDemand('LHR', 'JFK')).toBeGreaterThan(1200);
     expect(baseDemand('LHR', 'JFK')).toBeLessThan(8000);

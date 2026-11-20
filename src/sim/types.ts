@@ -39,11 +39,25 @@ export interface Airport {
   tier: 1 | 2 | 3 | 4 | 5;
   /** 0..1 share of business travel. */
   business: number;
+  /** A centre of commerce or government: head offices, finance, ministries. */
+  businessCentre: boolean;
   /** 0..1 share of leisure travel. */
   leisure: number;
   /** Peak season is northern winter. */
   winterSun: boolean;
   slotLimited: boolean;
+  /**
+   * How much of its country's long-haul traffic the airport draws: 1 for an
+   * intercontinental gateway, less for a secondary one, little for the rest.
+   */
+  gateway: number;
+  /** Landmass number: airports that share one can be reached from each other by road or rail. */
+  land: number;
+  /**
+   * How much more of the airport's traffic goes abroad than is usual in its country,
+   * as a ratio of odds: 6 for Kennedy, 0.5 for Denver, 1 for a typical airport.
+   */
+  outward: number;
   /** Fare / local cost level of the country (1 = world reference). */
   wealth: number;
   /** Unit vector on the globe (y up, see geo.ts). */

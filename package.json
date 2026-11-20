@@ -12,6 +12,7 @@
     "test": "vitest run",
     "data:airports": "node scripts/build-airports.mjs",
     "data:borders": "node scripts/build-borders.mjs",
+    "data:ties": "vitest run tests/ties.test.ts -t \"fits the ties\" --disable-console-intercept",
     "balance": "vitest run tests/balance.test.ts --reporter=verbose"
   },
   "dependencies": {

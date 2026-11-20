@@ -1,221 +1,227 @@
 # Country attributes used by the demand and fare models.
 #
-# Columns:  ISO2  REGION  WEALTH  BLOC  [PARENT]
+# Columns:  ISO2  REGION  WEALTH  BLOC  PARENT  [lang=…]  [rail=…]  [dom=…]
 #   REGION  NAM north america · LAM latin america & caribbean · EUR europe · MEA middle east
 #           AFR africa · SCA south & central asia · EAS east asia · SEA south-east asia · OCE oceania
 #   WEALTH  fare / yield multiplier (1.0 = world reference)
 #   BLOC    travel-affinity bloc; flights inside a bloc behave partly like domestic ones ('-' = none)
-#   PARENT  ISO2 of the country this territory counts as domestic with
+#   PARENT  ISO2 of the country this territory counts as domestic with ('-' = none)
+#   lang    language and historical spheres the country belongs to: people travel along them
+#           (en es fr pt ar ru de zh nl ms tr fa it · sc nordic · gr greek · yu ex-yugoslav · sq albanian)
+#   rail    how well surface travel competes on short trips: H fast trains, P poor roads and rails
+#           (left out: ordinary, or poor where WEALTH is under 0.8)
+#   dom     share of the country's airport passengers flying within it: a target the country ties
+#           are fitted to (npm run data:ties), not a statistic
 
 # North America
-US NAM 1.15 NA
-CA NAM 1.12 NA
-PR NAM 1.00 NA US
-VI NAM 1.00 NA US
-BM NAM 1.15 -
-GL NAM 1.05 EU DK
+US NAM 1.15 NA - lang=en dom=.87
+CA NAM 1.12 NA - lang=en,fr dom=.57
+PR NAM 1.00 NA US lang=en,es
+VI NAM 1.00 NA US lang=en
+BM NAM 1.15 - - lang=en
+GL NAM 1.05 EU DK lang=sc
 
 # Latin America & Caribbean
-MX LAM 0.88 NA
-PA LAM 0.88 LATAM
-CR LAM 0.88 LATAM
-SV LAM 0.72 LATAM
-GT LAM 0.72 LATAM
-HN LAM 0.70 LATAM
-NI LAM 0.68 LATAM
-BZ LAM 0.80 LATAM
-CU LAM 0.70 CARIB
-DO LAM 0.82 CARIB
-JM LAM 0.82 CARIB
-BS LAM 1.00 CARIB
-AW LAM 1.00 CARIB
-CW LAM 0.95 CARIB
-SX LAM 0.95 CARIB
-BB LAM 0.95 CARIB
-TT LAM 0.90 CARIB
-KY LAM 1.10 CARIB
-AG LAM 0.92 CARIB
-LC LAM 0.88 CARIB
-GP LAM 0.95 CARIB FR
-MQ LAM 0.95 CARIB FR
-GF LAM 0.90 LATAM FR
-BR LAM 0.84 LATAM
-CO LAM 0.80 LATAM
-PE LAM 0.80 LATAM
-CL LAM 0.90 LATAM
-AR LAM 0.84 LATAM
-EC LAM 0.76 LATAM
-VE LAM 0.66 LATAM
-UY LAM 0.90 LATAM
-PY LAM 0.74 LATAM
-BO LAM 0.70 LATAM
-GY LAM 0.80 LATAM
-SR LAM 0.74 LATAM
+MX LAM 0.88 NA - lang=es dom=.67
+PA LAM 0.88 LATAM - lang=es
+CR LAM 0.88 LATAM - lang=es dom=.04
+SV LAM 0.72 LATAM - lang=es
+GT LAM 0.72 LATAM - lang=es
+HN LAM 0.70 LATAM - lang=es
+NI LAM 0.68 LATAM - lang=es
+BZ LAM 0.80 LATAM - lang=en
+CU LAM 0.70 CARIB - lang=es dom=.05
+DO LAM 0.82 CARIB - lang=es dom=.02
+JM LAM 0.82 CARIB - lang=en dom=.02
+BS LAM 1.00 CARIB - lang=en
+AW LAM 1.00 CARIB - lang=nl
+CW LAM 0.95 CARIB - lang=nl
+SX LAM 0.95 CARIB - lang=nl
+BB LAM 0.95 CARIB - lang=en
+TT LAM 0.90 CARIB - lang=en
+KY LAM 1.10 CARIB - lang=en
+AG LAM 0.92 CARIB - lang=en
+LC LAM 0.88 CARIB - lang=en
+GP LAM 0.95 CARIB FR lang=fr
+MQ LAM 0.95 CARIB FR lang=fr
+GF LAM 0.90 LATAM FR lang=fr
+BR LAM 0.84 LATAM - lang=pt rail=P dom=.89
+CO LAM 0.80 LATAM - lang=es rail=P dom=.78
+PE LAM 0.80 LATAM - lang=es rail=P dom=.72
+CL LAM 0.90 LATAM - lang=es dom=.72
+AR LAM 0.84 LATAM - lang=es dom=.69
+EC LAM 0.76 LATAM - lang=es dom=.60
+VE LAM 0.66 LATAM - lang=es
+UY LAM 0.90 LATAM - lang=es
+PY LAM 0.74 LATAM - lang=es
+BO LAM 0.70 LATAM - lang=es dom=.65
+GY LAM 0.80 LATAM - lang=en
+SR LAM 0.74 LATAM - lang=nl
 
 # Europe
-GB EUR 1.15 EU
-IE EUR 1.12 EU
-FR EUR 1.12 EU
-NL EUR 1.14 EU
-BE EUR 1.12 EU
-LU EUR 1.20 EU
-DE EUR 1.14 EU
-CH EUR 1.25 EU
-AT EUR 1.12 EU
-ES EUR 1.00 EU
-PT EUR 0.96 EU
-IT EUR 1.04 EU
-GR EUR 0.94 EU
-CY EUR 0.98 EU
-MT EUR 0.98 EU
-DK EUR 1.16 EU
-NO EUR 1.20 EU
-SE EUR 1.14 EU
-FI EUR 1.12 EU
-IS EUR 1.16 EU
-FO EUR 1.10 EU DK
-SJ EUR 1.15 EU NO
-PL EUR 0.94 EU
-CZ EUR 0.96 EU
-HU EUR 0.92 EU
-SK EUR 0.92 EU
-SI EUR 0.98 EU
-HR EUR 0.94 EU
-RS EUR 0.82 BALK
-BA EUR 0.78 BALK
-ME EUR 0.80 BALK
-MK EUR 0.78 BALK
-AL EUR 0.78 BALK
-XK EUR 0.76 BALK
-RO EUR 0.88 EU
-BG EUR 0.86 EU
-LV EUR 0.94 EU
-LT EUR 0.94 EU
-EE EUR 0.98 EU
-UA EUR 0.72 -
-BY EUR 0.74 CIS
-RU EUR 0.84 CIS
-TR EUR 0.84 -
-GE EUR 0.78 -
-AM EUR 0.76 CIS
-AZ EUR 0.80 CIS
+GB EUR 1.15 EU - lang=en rail=H dom=.13
+IE EUR 1.12 EU - lang=en dom=.01
+FR EUR 1.12 EU - lang=fr rail=H dom=.28
+NL EUR 1.14 EU - lang=nl rail=H dom=0
+BE EUR 1.12 EU - lang=fr,nl rail=H dom=0
+LU EUR 1.20 EU - lang=fr,de
+DE EUR 1.14 EU - lang=de rail=H dom=.18
+CH EUR 1.25 EU - lang=fr,de,it rail=H dom=.02
+AT EUR 1.12 EU - lang=de rail=H dom=.02
+ES EUR 1.00 EU - lang=es rail=H dom=.31
+PT EUR 0.96 EU - lang=pt dom=.19
+IT EUR 1.04 EU - lang=it rail=H dom=.33
+GR EUR 0.94 EU - lang=gr rail=P dom=.28
+CY EUR 0.98 EU - lang=en,gr dom=0
+MT EUR 0.98 EU - lang=en,it
+DK EUR 1.16 EU - lang=sc dom=.12
+NO EUR 1.20 EU - lang=sc rail=P dom=.55
+SE EUR 1.14 EU - lang=sc dom=.33
+FI EUR 1.12 EU - lang=sc dom=.22
+IS EUR 1.16 EU - lang=sc rail=P
+FO EUR 1.10 EU DK lang=sc
+SJ EUR 1.15 EU NO lang=sc
+PL EUR 0.94 EU - dom=.07
+CZ EUR 0.96 EU -
+HU EUR 0.92 EU -
+SK EUR 0.92 EU -
+SI EUR 0.98 EU - lang=yu
+HR EUR 0.94 EU - lang=yu dom=.06
+RS EUR 0.82 BALK - lang=yu
+BA EUR 0.78 BALK - lang=yu
+ME EUR 0.80 BALK - lang=yu dom=0
+MK EUR 0.78 BALK - lang=yu
+AL EUR 0.78 BALK - lang=sq
+XK EUR 0.76 BALK - lang=sq
+RO EUR 0.88 EU - dom=.08
+BG EUR 0.86 EU - dom=.03
+LV EUR 0.94 EU -
+LT EUR 0.94 EU -
+EE EUR 0.98 EU -
+UA EUR 0.72 - - lang=ru dom=.08
+BY EUR 0.74 CIS - lang=ru
+RU EUR 0.84 CIS - lang=ru dom=.72
+TR EUR 0.84 - - lang=tr rail=P dom=.48
+GE EUR 0.78 - - lang=ru dom=.03
+AM EUR 0.76 CIS - lang=ru
+AZ EUR 0.80 CIS - lang=ru,tr
 
 # Middle East
-AE MEA 1.14 GCC
-QA MEA 1.16 GCC
-KW MEA 1.10 GCC
-BH MEA 1.04 GCC
-OM MEA 1.00 GCC
-SA MEA 1.04 GCC
-IL MEA 1.10 -
-JO MEA 0.84 ARAB
-LB MEA 0.82 ARAB
-IQ MEA 0.76 ARAB
-SY MEA 0.62 ARAB
-IR MEA 0.74 -
+AE MEA 1.14 GCC - lang=ar dom=0
+QA MEA 1.16 GCC - lang=ar
+KW MEA 1.10 GCC - lang=ar
+BH MEA 1.04 GCC - lang=ar
+OM MEA 1.00 GCC - lang=ar dom=.10
+SA MEA 1.04 GCC - lang=ar rail=P dom=.53
+IL MEA 1.10 - -
+JO MEA 0.84 ARAB - lang=ar dom=.04
+LB MEA 0.82 ARAB - lang=fr,ar
+IQ MEA 0.76 ARAB - lang=ar dom=.20
+SY MEA 0.62 ARAB - lang=ar
+IR MEA 0.74 - - lang=fa dom=.75
 
 # Africa
-ZA AFR 0.84 SADC
-EG AFR 0.74 ARAB
-MA AFR 0.76 -
-DZ AFR 0.74 -
-TN AFR 0.74 -
-LY AFR 0.72 ARAB
-ET AFR 0.66 EAFR
-KE AFR 0.72 EAFR
-TZ AFR 0.70 EAFR
-UG AFR 0.66 EAFR
-RW AFR 0.68 EAFR
-BI AFR 0.60 EAFR
-NG AFR 0.72 WAFR
-GH AFR 0.72 WAFR
-CI AFR 0.72 WAFR
-SN AFR 0.72 WAFR
-ML AFR 0.62 WAFR
-BF AFR 0.62 WAFR
-NE AFR 0.60 WAFR
-BJ AFR 0.64 WAFR
-TG AFR 0.64 WAFR
-LR AFR 0.62 WAFR
-SL AFR 0.60 WAFR
-GN AFR 0.62 WAFR
-GM AFR 0.64 WAFR
-CV AFR 0.80 WAFR
-MR AFR 0.64 WAFR
-CM AFR 0.68 CAFR
-GA AFR 0.80 CAFR
-CG AFR 0.70 CAFR
-CD AFR 0.64 CAFR
-AO AFR 0.74 SADC
-MZ AFR 0.64 SADC
-ZM AFR 0.66 SADC
-ZW AFR 0.64 SADC
-NA AFR 0.78 SADC
-BW AFR 0.80 SADC
-MU AFR 0.92 -
-RE AFR 0.98 - FR
-SC AFR 1.00 -
-MG AFR 0.62 -
-KM AFR 0.60 -
-DJ AFR 0.70 EAFR
-ER AFR 0.58 EAFR
-SD AFR 0.58 ARAB
-SS AFR 0.58 EAFR
-SO AFR 0.56 EAFR
-ST AFR 0.64 CAFR
-GQ AFR 0.76 CAFR
-SH AFR 1.00 - GB
+ZA AFR 0.84 SADC - lang=en rail=P dom=.68
+EG AFR 0.74 ARAB - lang=ar dom=.12
+MA AFR 0.76 - - lang=fr,ar rail=N dom=.08
+DZ AFR 0.74 - - lang=fr,ar dom=.25
+TN AFR 0.74 - - lang=fr,ar rail=N dom=.03
+LY AFR 0.72 ARAB - lang=ar
+ET AFR 0.66 EAFR -
+KE AFR 0.72 EAFR - lang=en dom=.42
+TZ AFR 0.70 EAFR - lang=en dom=.45
+UG AFR 0.66 EAFR - lang=en
+RW AFR 0.68 EAFR - lang=en,fr
+BI AFR 0.60 EAFR - lang=fr
+NG AFR 0.72 WAFR - lang=en dom=.72
+GH AFR 0.72 WAFR - lang=en
+CI AFR 0.72 WAFR - lang=fr
+SN AFR 0.72 WAFR - lang=fr
+ML AFR 0.62 WAFR - lang=fr
+BF AFR 0.62 WAFR - lang=fr
+NE AFR 0.60 WAFR - lang=fr
+BJ AFR 0.64 WAFR - lang=fr
+TG AFR 0.64 WAFR - lang=fr
+LR AFR 0.62 WAFR - lang=en
+SL AFR 0.60 WAFR - lang=en
+GN AFR 0.62 WAFR - lang=fr
+GM AFR 0.64 WAFR - lang=en
+CV AFR 0.80 WAFR - lang=pt dom=.25
+MR AFR 0.64 WAFR - lang=fr,ar
+CM AFR 0.68 CAFR - lang=en,fr dom=.30
+GA AFR 0.80 CAFR - lang=fr
+CG AFR 0.70 CAFR - lang=fr dom=.30
+CD AFR 0.64 CAFR - lang=fr dom=.45
+AO AFR 0.74 SADC - lang=pt
+MZ AFR 0.64 SADC - lang=pt
+ZM AFR 0.66 SADC - lang=en dom=.25
+ZW AFR 0.64 SADC - lang=en dom=.25
+NA AFR 0.78 SADC - lang=en dom=.05
+BW AFR 0.80 SADC - lang=en dom=.10
+MU AFR 0.92 - - lang=en,fr
+RE AFR 0.98 - FR lang=fr
+SC AFR 1.00 - - lang=en,fr
+MG AFR 0.62 - - lang=fr dom=.30
+KM AFR 0.60 - - lang=fr,ar
+DJ AFR 0.70 EAFR - lang=fr,ar
+ER AFR 0.58 EAFR -
+SD AFR 0.58 ARAB - lang=ar
+SS AFR 0.58 EAFR - lang=en
+SO AFR 0.56 EAFR - lang=ar dom=.30
+ST AFR 0.64 CAFR - lang=pt
+GQ AFR 0.76 CAFR - lang=es
+SH AFR 1.00 - GB lang=en
 
 # South & Central Asia
-IN SCA 0.70 SAARC
-PK SCA 0.62 SAARC
-BD SCA 0.62 SAARC
-LK SCA 0.70 SAARC
-NP SCA 0.62 SAARC
-BT SCA 0.80 SAARC
-MV SCA 1.05 SAARC
-AF SCA 0.56 -
-KZ SCA 0.84 CIS
-UZ SCA 0.70 CIS
-TJ SCA 0.62 CIS
-TM SCA 0.70 CIS
+IN SCA 0.70 SAARC - lang=en rail=N dom=.80
+PK SCA 0.62 SAARC - lang=en dom=.32
+BD SCA 0.62 SAARC - lang=en dom=.15
+LK SCA 0.70 SAARC - lang=en
+NP SCA 0.62 SAARC -
+BT SCA 0.80 SAARC -
+MV SCA 1.05 SAARC - lang=en dom=.10
+AF SCA 0.56 - - lang=fa
+KZ SCA 0.84 CIS - lang=ru dom=.58
+UZ SCA 0.70 CIS - lang=ru dom=.20
+TJ SCA 0.62 CIS - lang=ru,fa
+TM SCA 0.70 CIS - lang=ru
 
 # East Asia
-CN EAS 0.84 CN
-HK EAS 1.12 CN
-MO EAS 1.04 CN
-TW EAS 1.04 CN
-JP EAS 1.12 -
-KR EAS 1.08 -
-MN EAS 0.72 -
+CN EAS 0.84 CN - lang=zh rail=H dom=.90
+HK EAS 1.12 CN - lang=en,zh
+MO EAS 1.04 CN - lang=pt,zh
+TW EAS 1.04 CN - lang=zh rail=H dom=.08
+JP EAS 1.12 - - rail=H dom=.67
+KR EAS 1.08 - - rail=H dom=.42
+MN EAS 0.72 - -
 
 # South-East Asia
-SG SEA 1.16 ASEAN
-MY SEA 0.84 ASEAN
-TH SEA 0.80 ASEAN
-ID SEA 0.72 ASEAN
-PH SEA 0.72 ASEAN
-VN SEA 0.72 ASEAN
-KH SEA 0.68 ASEAN
-LA SEA 0.66 ASEAN
-MM SEA 0.62 ASEAN
-BN SEA 1.00 ASEAN
-TL SEA 0.66 -
+SG SEA 1.16 ASEAN - lang=en,zh,ms
+MY SEA 0.84 ASEAN - lang=en,zh,ms rail=P dom=.50
+TH SEA 0.80 ASEAN - rail=N dom=.46
+ID SEA 0.72 ASEAN - lang=ms dom=.81
+PH SEA 0.72 ASEAN - lang=en dom=.67
+VN SEA 0.72 ASEAN - dom=.64
+KH SEA 0.68 ASEAN - dom=.10
+LA SEA 0.66 ASEAN - dom=.20
+MM SEA 0.62 ASEAN - dom=.40
+BN SEA 1.00 ASEAN - lang=en,ms
+TL SEA 0.66 - - lang=pt
 
 # Oceania
-AU OCE 1.14 ANZ
-NZ OCE 1.08 ANZ
-FJ OCE 0.86 PAC
-PF OCE 1.05 PAC FR
-NC OCE 1.02 PAC FR
-PG OCE 0.72 PAC
-WS OCE 0.78 PAC
-TO OCE 0.78 PAC
-CK OCE 0.95 PAC NZ
-VU OCE 0.78 PAC
-SB OCE 0.70 PAC
-PW OCE 0.95 PAC
-MP OCE 0.98 NA US
-GU OCE 1.00 NA US
-MH OCE 0.78 PAC
-KI OCE 0.70 PAC
+AU OCE 1.14 ANZ - lang=en dom=.74
+NZ OCE 1.08 ANZ - lang=en rail=P dom=.65
+FJ OCE 0.86 PAC - lang=en
+PF OCE 1.05 PAC FR lang=fr
+NC OCE 1.02 PAC FR lang=fr
+PG OCE 0.72 PAC - lang=en
+WS OCE 0.78 PAC - lang=en
+TO OCE 0.78 PAC - lang=en
+CK OCE 0.95 PAC NZ lang=en
+VU OCE 0.78 PAC - lang=en,fr
+SB OCE 0.70 PAC - lang=en
+PW OCE 0.95 PAC - lang=en
+MP OCE 0.98 NA US lang=en
+GU OCE 1.00 NA US lang=en
+MH OCE 0.78 PAC - lang=en
+KI OCE 0.70 PAC - lang=en

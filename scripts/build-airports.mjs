@@ -4,13 +4,19 @@
 //   - scripts/countries-curated.txt  (country attributes)
 //   - OurAirports CSV dumps          (public-domain coordinates, names, elevations, runways)
 //
+//   - Natural Earth 1:10m land   (public domain, via world-atlas: which landmass each airport is on)
+//
 // Usage:  node scripts/build-airports.mjs [dir-with-ourairports-csv]
 // Without a directory the CSVs are downloaded from the OurAirports GitHub mirror.
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { feature } from 'topojson-client';
+
+const require = createRequire(import.meta.url);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
@@ -135,6 +141,118 @@ function shortName(name) {
     .trim();
 }
 
+// ───────────── Landmasses ─────────────
+//
+// Two airports on the same landmass can be reached from one another by road or
+// rail, which is what short flights compete with; across water they cannot.
+
+/**
+ * Airports that count as standing on the same land as another one, where a bridge,
+ * tunnel or causeway joins what the coastline data shows as separate: X: 'Y' reads
+ * "X is on the same land as Y".
+ */
+const SAME_LAND_AS = {
+  JFK: 'EWR', LGA: 'EWR', YUL: 'YYZ', EYW: 'MIA', FLN: 'GRU', ICN: 'GMP', SIN: 'KUL', PEN: 'KUL',
+  HKT: 'BKK', HKG: 'CAN', MFM: 'CAN', ZUH: 'CAN', XMN: 'CAN', CPH: 'FRA', TOS: 'OSL', BAH: 'RUH',
+  DJE: 'TUN', KIX: 'HND', NGO: 'HND',
+  // Kyushu: the Shinkansen runs through to Kagoshima.
+  FUK: 'HND', KOJ: 'HND', KMJ: 'HND', NGS: 'HND',
+};
+
+async function loadLand() {
+  const topo = JSON.parse(await readFile(require.resolve('world-atlas/land-10m.json'), 'utf8'));
+  const land = feature(topo, topo.objects.land);
+  const polys = [];
+  for (const f of land.features ?? [land]) {
+    const g = f.geometry;
+    for (const raw of g.type === 'Polygon' ? [g.coordinates] : g.coordinates) {
+      // A ring that crosses the antimeridian jumps from +180 to -180: unwrap it so it is continuous.
+      const rings = raw.map((ring) => {
+        let shift = 0;
+        const out = [ring[0]];
+        for (let i = 1; i < ring.length; i++) {
+          const d = ring[i][0] - ring[i - 1][0];
+          if (d > 180) shift -= 360; else if (d < -180) shift += 360;
+          out.push([ring[i][0] + shift, ring[i][1]]);
+        }
+        return out;
+      });
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const [x, y] of rings[0]) {
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
+      }
+      polys.push({ rings, minX, maxX, minY, maxY });
+    }
+  }
+  return polys;
+}
+
+function inRing(ring, x, y) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+function inPolygon(p, x, y) {
+  for (const sx of [x, x + 360, x - 360]) {
+    if (sx < p.minX || sx > p.maxX || y < p.minY || y > p.maxY || !inRing(p.rings[0], sx, y)) continue;
+    if (!p.rings.slice(1).some((hole) => inRing(hole, sx, y))) return true;
+  }
+  return false;
+}
+
+/** Kilometres from a point to the nearest vertex of a polygon's coast (far polygons are skipped). */
+function coastDistance(p, x, y) {
+  let best = Infinity;
+  const rad = Math.PI / 180;
+  for (const sx of [x, x + 360, x - 360]) {
+    if (sx < p.minX - 1 || sx > p.maxX + 1 || y < p.minY - 1 || y > p.maxY + 1) continue;
+    for (const [px, py] of p.rings[0]) {
+      const dx = (px - sx) * rad * Math.cos(((py + y) / 2) * rad);
+      const dy = (py - y) * rad;
+      const d = 6371 * Math.sqrt(dx * dx + dy * dy);
+      if (d < best) best = d;
+    }
+  }
+  return best;
+}
+
+/**
+ * A landmass number for every airport: the land polygon it stands in, or the nearest
+ * one within a few kilometres (airports on reclaimed land and inshore islets), or a
+ * number of its own on an island too small for the map.
+ */
+async function landmasses(rows) {
+  const polys = await loadLand();
+  const key = new Map();
+  for (const r of rows) {
+    const [iata, , , , , lat, lon] = r;
+    let hit = polys.findIndex((p) => inPolygon(p, lon, lat));
+    if (hit < 0) {
+      let best = Infinity;
+      polys.forEach((p, i) => {
+        const d = coastDistance(p, lon, lat);
+        if (d < best) { best = d; hit = i; }
+      });
+      if (best > 12) hit = -1;
+    }
+    key.set(iata, hit >= 0 ? `p${hit}` : `i${iata}`);
+  }
+  for (const [iata, other] of Object.entries(SAME_LAND_AS)) {
+    if (key.has(iata) && key.has(other)) key.set(iata, key.get(other));
+  }
+  // Compact numbers, biggest landmass first.
+  const count = new Map();
+  for (const k of key.values()) count.set(k, (count.get(k) ?? 0) + 1);
+  const order = [...count.keys()].sort((a, b) => count.get(b) - count.get(a) || a.localeCompare(b));
+  const index = new Map(order.map((k, i) => [k, i]));
+  return new Map([...key].map(([iata, k]) => [iata, index.get(k)]));
+}
+
 async function main() {
   const dir = process.argv[2];
   const [airportsCsv, runwaysCsv, countriesCsv, curatedTxt, countriesTxt] = await Promise.all([
@@ -167,13 +285,18 @@ async function main() {
     if (!prev || score > prev.score) byIata.set(a.iata_code, { ...a, score });
   }
 
-  const curatedCountries = new Map(parseTable(countriesTxt).map((r) => [r[0], r]));
+  const curatedCountries = new Map(parseTable(countriesTxt).map((r) => {
+    const extra = Object.fromEntries(r.slice(5).map((t) => t.split('=')));
+    return [r[0], { region: r[1], wealth: Number(r[2]), bloc: r[3] === '-' ? '' : r[3], parent: !r[4] || r[4] === '-' ? '' : r[4], ...extra }];
+  }));
   const problems = [];
   const rows = [];
   const seen = new Set();
   const usedCountries = new Set();
 
-  for (const [iata, paxStr, transferStr = '0', flags = ''] of parseTable(curatedTxt)) {
+  for (const tokens of parseTable(curatedTxt)) {
+    const extra = Object.fromEntries(tokens.filter((t) => t.includes('=')).map((t) => t.split('=')));
+    const [iata, paxStr, transferStr = '0', flags = ''] = tokens.filter((t) => !t.includes('='));
     if (seen.has(iata)) { problems.push(`duplicate ${iata}`); continue; }
     seen.add(iata);
     const a = byIata.get(iata);
@@ -195,24 +318,29 @@ async function main() {
       Number(paxStr),
       Number(transferStr),
       flags,
+      extra.dom === undefined ? -1 : Number(extra.dom),
     ]);
   }
 
   const countryRows = [...usedCountries].sort().map((iso) => {
-    const c = curatedCountries.get(iso) ?? [iso, 'EUR', '0.8', '-'];
-    return [iso, countryNames.get(iso) ?? iso, c[1], Number(c[2]), c[3] === '-' ? '' : c[3], c[4] ?? ''];
+    const c = curatedCountries.get(iso) ?? { region: 'EUR', wealth: 0.8, bloc: '', parent: '' };
+    // Surface travel competes poorly in poorer countries unless told otherwise.
+    const rail = c.rail ?? (c.wealth < 0.8 ? 'P' : 'N');
+    return [iso, countryNames.get(iso) ?? iso, c.region, c.wealth, c.bloc, c.parent, c.lang ?? '', rail, c.dom === undefined ? -1 : Number(c.dom)];
   });
 
   rows.sort((x, y) => y[9] - x[9] || x[0].localeCompare(y[0]));
+  const land = await landmasses(rows);
+  for (const r of rows) r.push(land.get(r[0]));
 
   const out = `// AUTO-GENERATED by scripts/build-airports.mjs — do not edit by hand.
 // Geography: OurAirports (https://ourairports.com/data/, public domain).
 // Traffic figures are approximate game-balance inputs, not statistics.
 
-/** [iata, icao, name, city, countryIso, lat, lon, elevationM, runwayM, paxM, transferShare, flags] */
-export type AirportRow = [string, string, string, string, string, number, number, number, number, number, number, string];
-/** [iso, name, region, wealth, bloc, parentIso] */
-export type CountryRow = [string, string, string, number, string, string];
+/** [iata, icao, name, city, countryIso, lat, lon, elevationM, runwayM, paxM, transferShare, flags, domestic share target or -1, landmass] */
+export type AirportRow = [string, string, string, string, string, number, number, number, number, number, number, string, number, number];
+/** [iso, name, region, wealth, bloc, parentIso, spheres, surface (H fast trains, N ordinary, P poor), domestic share target or -1] */
+export type CountryRow = [string, string, string, number, string, string, string, string, number];
 
 export const AIRPORT_ROWS: AirportRow[] = [
 ${rows.map((r) => '  ' + JSON.stringify(r) + ',').join('\n')}
