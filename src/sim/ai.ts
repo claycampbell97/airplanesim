@@ -269,6 +269,8 @@ export function reviewRival(sim: Sim, al: Airline): void {
         && ac.rotation.every((rid) => { const o = sim.routeById.get(rid); return !!o && o.aircraft.length === 1 && loadFactor(o) < 0.7; })) : undefined;
       if (mine && partner) {
         setRotation(sim, partner.id, [...partner.rotation, r.id]);
+        // From now on it shares its day between them, and goes on doing so if one is dropped.
+        partner.partTime = Math.max(partner.partTime ?? 1, partner.rotation.length);
         setRotation(sim, mine.id, []);
         r.lossMonths = 0;
         continue;

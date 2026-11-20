@@ -2,9 +2,9 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { ArrowDown, ArrowUp, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, CloudFog, CloudLightning, CloudRainWind, CloudSnow, Tornado, Wind, X } from 'lucide-react';
 import { EMBLEM_PATHS } from '../../render/aircraft/emblems';
-import type { Livery } from '../../sim/types';
+import type { Livery, WeatherKind } from '../../sim/types';
 
 export function cx(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(' ');
@@ -36,6 +36,14 @@ export function Logo({ livery, size = 28 }: { livery: Livery; size?: number }) {
       </g>
     </svg>
   );
+}
+
+const WEATHER_ICONS = { storm: CloudRainWind, snow: CloudSnow, thunder: CloudLightning, cyclone: Tornado, fog: CloudFog, sand: Wind };
+
+/** The pictogram for a kind of weather. */
+export function WeatherIcon({ kind, size }: { kind: WeatherKind; size?: number }) {
+  const Icon = WEATHER_ICONS[kind];
+  return <Icon size={size} />;
 }
 
 export function Emblem({ emblem, size = 20 }: { emblem: Livery['emblem']; size?: number }) {

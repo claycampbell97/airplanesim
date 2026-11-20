@@ -76,6 +76,8 @@ h1, h2, h3, h4, p { margin: 0; }
 .ap-label[data-kind='served'] { color: color-mix(in srgb, var(--accent) 75%, white); }
 .ap-label[data-kind='candidate'] { color: #bbf7d0; }
 .ap-label[data-kind='selected'] { color: #fff; }
+.ap-label[data-kind='weather'] { color: #dbe7f5; font-style: italic; }
+.ap-label[data-kind='weather'] span { margin-left: 0; opacity: 0.92; }
 
 /* ───────── Glass ───────── */
 .glass {

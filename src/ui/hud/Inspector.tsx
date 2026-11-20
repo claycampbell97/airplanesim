@@ -7,14 +7,15 @@ import { AIRPORT, airportDistance, TIER_NAMES } from '../../sim/data/airports';
 import { baseDemand, topMarkets } from '../../sim/demand';
 import { feeFactor, HUB_LEVEL_NAMES, hubMonthlyFee, hubSetupCost } from '../../sim/finance';
 import { buySlots, sellSlot, slotPrice, slotRefund, slotsHeld, slotsUsed } from '../../sim/slots';
-import { formatClock } from '../../sim/time';
+import { formatClock, formatDate } from '../../sim/time';
+import { WEATHER_CLOSES, weatherEffect, weatherOutlook, weatherOver } from '../../sim/weather';
 import type { Aircraft, AircraftCategory, Airport } from '../../sim/types';
 import { altitudeProfile } from '../../render/arcs';
 import { attempt, confirm, flightNumber } from '../app/act';
 import { duration, integer, km, money, percent, signedMoney, sum3 } from '../app/format';
 import { game, inspectAirport, inspectFlight, setChase, setState, showAircraft, showRoute, startPlan, useApp, useSim } from '../app/store';
 import { HBars } from '../components/charts';
-import { Logo, Meter } from '../components/ui';
+import { Logo, Meter, WeatherIcon } from '../components/ui';
 
 function AirportCard({ airport }: { airport: Airport }) {
   const sim = useSim();
@@ -35,6 +36,11 @@ function AirportCard({ airport }: { airport: Airport }) {
   }
   const rivals = [...carriers.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
   const events = sim.game.world.events.filter((e) => e.airport === airport.id);
+  // The weather overhead, and what is on its way.
+  const now = sim.game.time;
+  const weather = weatherOver(sim, airport, now);
+  const outlook = weatherOutlook(sim, airport);
+  const coming = outlook && (outlook.from > now + 90 || outlook.worst > (weather?.strength ?? 0) + 0.12) ? outlook : null;
 
   const upgrade = () => confirm(
     hub ? `Upgrade ${airport.id} to a ${HUB_LEVEL_NAMES[nextLevel].toLowerCase()}?` : `Open a base at ${airport.id}?`,
@@ -61,7 +67,19 @@ function AirportCard({ airport }: { airport: Airport }) {
           {hub && <span className="badge gold"><Building2 />Your {HUB_LEVEL_NAMES[hub.level].toLowerCase()}</span>}
           {airport.slotLimited && <span className="badge warn">Slot-constrained</span>}
           {events.map((e) => <span key={e.id} className={`badge ${e.demand >= 1 && !e.disruption ? 'good' : 'bad'}`}>{e.title.split(' at ')[0].split(' in ')[0]}</span>)}
+          {weather && <span className={`badge ${weather.strength >= 0.5 ? 'bad' : 'warn'}`}><WeatherIcon kind={weather.system.kind} />{weather.system.title} · {weatherEffect(weather.strength)}</span>}
         </div>
+        {coming && (
+          <div className="row gap-6 small" style={{ alignItems: 'flex-start' }}>
+            <span className={coming.worst >= WEATHER_CLOSES ? 'bad' : 'warn'} style={{ flex: 'none', marginTop: 1 }}><WeatherIcon kind={coming.system.kind} size={14} /></span>
+            <span className="muted">
+              {coming.from > now + 90
+                ? <>{coming.system.title} forecast here from {formatDate(coming.from)}, {formatClock(coming.from)}: </>
+                : <>{coming.system.title} is getting worse here: </>}
+              <span className={coming.worst >= WEATHER_CLOSES ? 'bad' : ''}>{coming.worst >= WEATHER_CLOSES ? 'the airport is expected to close while it passes' : `expect ${weatherEffect(coming.worst)}`}</span>.
+            </span>
+          </div>
+        )}
         <dl className="kv small">
           <dt>Local market</dt><dd>{airport.pax >= 1 ? `${airport.pax.toFixed(1)}M` : `${integer(airport.pax * 1000)}k`} passengers a year</dd>
           <dt>Longest runway</dt><dd>{integer(airport.runway)} m{airport.effRunway < airport.runway - 80 ? ` (acts like ${integer(airport.effRunway)} m at ${integer(airport.elev)} m elevation)` : ''}</dd>

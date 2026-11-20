@@ -1,6 +1,7 @@
 // The simulation engine: owns the game state, advances time, and exposes the
 // indexes that the rest of the sim modules work against.
 
+import type { ActiveWeather } from './weather';
 import { createAircraft } from './actions';
 import { createRival, reviewRival, seedRival } from './ai';
 import { AIRLINE_TEMPLATES } from './data/airlines';
@@ -86,6 +87,8 @@ export class Sim {
   season = new Float32Array(AIRPORTS.length).fill(1);
   eventFactor = new Float32Array(AIRPORTS.length).fill(1);
   disruption = new Float32Array(AIRPORTS.length);
+  /** The weather systems as they stand at about the present minute (see weather.ts). */
+  weatherNow: { bucket: number; list: ActiveWeather[] } | null = null;
   years = 0;
   /** Demand growth multiplier per region since the start of the game. */
   growth = { NAM: 1, LAM: 1, EUR: 1, MEA: 1, AFR: 1, SCA: 1, EAS: 1, SEA: 1, OCE: 1 } as Record<RegionId, number>;
@@ -139,7 +142,7 @@ export class Sim {
       objectives: initialObjectives(),
       world: {
         fuelPrice: FUEL_BASE, fuelTrend: 0, fuelHistory: [FUEL_BASE],
-        economy: 1, economyPhase: (seed % 628) / 100, economyHistory: [1], events: [],
+        economy: 1, economyPhase: (seed % 628) / 100, economyHistory: [1], events: [], weather: [],
       },
       nextId: 1, flags: {}, over: false,
     };
@@ -187,6 +190,7 @@ export class Sim {
   /** Brings a save from an earlier version up to date. */
   private adopt(): void {
     for (const al of this.game.airlines) al.repDay ??= al.reputation;
+    this.game.world.weather ??= [];
     // From before slots existed: what was already flying keeps its slots.
     const p = this.player;
     if (p.slots) return;

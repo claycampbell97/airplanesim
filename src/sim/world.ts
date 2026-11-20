@@ -7,6 +7,7 @@ import { marketLease, marketValue } from './finance';
 import { chance, pick, rand, randInt, randNormal, randRange, weightedPick } from './rng';
 import { monthOfYear } from './time';
 import type { AirportId, NewsItem, NewsKind, RegionId, UsedListing, WorldEvent } from './types';
+import { stepWeather } from './weather';
 import type { Sim } from './sim';
 
 export const FUEL_BASE = 0.85;
@@ -99,34 +100,6 @@ function spawnEvents(sim: Sim): void {
         addNews(sim, 'good', `${name} comes to ${ap.city}`, `Demand for flights to ${ap.city} (${ap.id}) is up about ${Math.round((boost - 1) * 100)}% for the next ${days} days.`, { airport: ap.id });
       } else if (ap.tier >= 5) {
         addNews(sim, 'world', `${name} opens in ${ap.city}`, `Airlines serving ${ap.id} are adding capacity for the next ${days} days.`, { airport: ap.id });
-      }
-    }
-  }
-
-  // Weather.
-  if (chance(g, 1 / 10)) {
-    const ap = weightedPick(g, AIRPORTS, (a) => {
-      const north = a.lat > 35;
-      const tropics = Math.abs(a.lat) < 28;
-      let w = Math.sqrt(a.mass);
-      if (north && northWinter) w *= 3;
-      if (tropics && northSummer && a.lat > 5) w *= 2.5;
-      return w;
-    });
-    if (ap && !g.world.events.some((e) => e.airport === ap.id && e.disruption)) {
-      const snow = ap.lat > 35 && northWinter;
-      const storm = Math.abs(ap.lat) < 28 && ap.lat > 5 && northSummer;
-      const severe = chance(g, 0.3);
-      const kind = snow ? (severe ? 'Blizzard' : 'Heavy snow') : storm ? (severe ? (ap.lon > 60 ? 'Typhoon' : 'Hurricane') : 'Tropical storm') : severe ? 'Severe storms' : pick(g, ['Dense fog', 'Thunderstorms', 'High winds']);
-      const days = severe ? randInt(g, 1, 3) : 1;
-      addEvent(sim, {
-        type: 'weather', title: `${kind} at ${ap.city}`, end: g.time + days * 1440, airport: ap.id,
-        demand: severe ? 0.75 : 0.95, disruption: severe ? 0.95 : randRange(g, 0.3, 0.6),
-      });
-      if (touchesPlayer(sim, ap.id)) {
-        addNews(sim, 'bad', `${kind} hits ${ap.city}`, severe
-          ? `${ap.name} (${ap.id}) is closed for about ${days} day${days > 1 ? 's' : ''}. Your flights there are held on the ground.`
-          : `Expect delays at ${ap.id} today.`, { airport: ap.id });
       }
     }
   }
@@ -253,5 +226,6 @@ export function stepWorld(sim: Sim): void {
   stepFuel(sim);
   stepEconomy(sim);
   spawnEvents(sim);
+  stepWeather(sim);
   refreshUsedMarket(sim);
 }

@@ -13,7 +13,12 @@ export interface LabelSpec {
   kind: string;
   /** Vertical offset so the label clears its marker. */
   offset: number;
+  /** Not tied to a point on the map: may move up or down a little to find room. */
+  floating?: boolean;
 }
+
+/** Where a floating label looks for room, in pixels below (or above) where it belongs. */
+const SHIFTS = [0, 19, -19, 38, -38, 57];
 
 const CELL_W = 58;
 const CELL_H = 18;
@@ -37,20 +42,24 @@ export class LabelLayer {
     let shown = 0;
     for (const s of specs) {
       if (shown >= max) break;
-      const w = (s.name ? 34 + s.name.length * 6.2 : 38) + 6;
+      const w = (s.name ? (s.code ? 34 : 4) + s.name.length * 6.2 : 38) + 6;
       const left = s.x + 7;
-      const top = s.y - 8 - s.offset * 0.4;
-      if (left < 0 || top < 0 || left + w > width || top + 16 > height) continue;
+      if (left < 0 || left + w > width) continue;
       const c0 = Math.floor(left / CELL_W);
       const c1 = Math.floor((left + w) / CELL_W);
-      const r0 = Math.floor(top / CELL_H);
-      const r1 = Math.floor((top + 15) / CELL_H);
-      let free = true;
-      for (let r = r0; r <= r1 && free; r++) for (let c = c0; c <= c1; c++) if (grid[r * cols + c]) { free = false; break; }
-      if (!free) continue;
-      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) grid[r * cols + c] = 1;
-      this.place(s, left, top);
-      shown++;
+      for (const shift of s.floating ? SHIFTS : SHIFTS.slice(0, 1)) {
+        const top = s.y - 8 - s.offset * 0.4 + shift;
+        if (top < 0 || top + 16 > height) continue;
+        const r0 = Math.floor(top / CELL_H);
+        const r1 = Math.floor((top + 15) / CELL_H);
+        let free = true;
+        for (let r = r0; r <= r1 && free; r++) for (let c = c0; c <= c1; c++) if (grid[r * cols + c]) { free = false; break; }
+        if (!free) continue;
+        for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) grid[r * cols + c] = 1;
+        this.place(s, left, top);
+        shown++;
+        break;
+      }
     }
     for (const [id, item] of this.pool) {
       if (!this.used.has(id) && item.el.style.display !== 'none') item.el.style.display = 'none';

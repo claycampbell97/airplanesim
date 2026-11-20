@@ -19,6 +19,8 @@ const LABEL_CSS = `
 .ap-label[data-kind=hub]{color:#ffd166}
 .ap-label[data-kind=served]{color:#99f6e4}
 .ap-label[data-kind=selected]{color:#fff}
+.ap-label[data-kind=weather]{color:#dbe7f5;font-style:italic}
+.ap-label[data-kind=weather] span{margin-left:0;opacity:.92}
 `;
 
 export async function runHarness(params: URLSearchParams): Promise<void> {
@@ -37,7 +39,7 @@ export async function runHarness(params: URLSearchParams): Promise<void> {
   await globe.load();
   globe.controls.setPose({ lat: num('lat', 30), lon: num('lon', 0), altitude: num('alt', 3.2) });
   globe.sunMode = params.get('sun') === 'studio' ? 'studio' : 'real';
-  if (params.get('clouds') === '0') globe.setLayers({ clouds: false });
+  if (params.get('weather') === '0') globe.setLayers({ weather: false });
   if (params.get('rivals') === '1') globe.setLayers({ rivalRoutes: true });
 
   let sim: Sim | null = null;

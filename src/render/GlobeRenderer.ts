@@ -10,6 +10,7 @@ import { vecToLatLon } from '../sim/geo';
 import type { Sim } from '../sim/sim';
 import type { Aircraft, AirportId, Route } from '../sim/types';
 import { arcPoint } from './arcs';
+import { WeatherLayer } from './weather';
 import { gmstDegrees, sunDirection } from './astro';
 import { GlobeCamera } from './camera';
 import { ChaseView } from './chase';
@@ -60,7 +61,8 @@ export type GlobeHit =
 export interface GlobeLayers {
   borders: boolean;
   labels: boolean;
-  clouds: boolean;
+  /** Weather systems drawn where they are. */
+  weather: boolean;
   /** Other airlines' aircraft. */
   rivalTraffic: boolean;
   /** Other airlines' route lines (only those touching the selected airport unless `allRivalRoutes`). */
@@ -106,7 +108,7 @@ export class GlobeRenderer {
   sunMode: SunMode = 'real';
   /** Unit vector towards the sun in the Earth-fixed frame. */
   readonly sun = new THREE.Vector3(1, 0, 0);
-  readonly layers: GlobeLayers = { borders: true, labels: true, clouds: true, rivalTraffic: true, rivalRoutes: false };
+  readonly layers: GlobeLayers = { borders: true, labels: true, weather: true, rivalTraffic: true, rivalRoutes: false };
   colorMode: RouteColorMode = 'brand';
 
   earth: Earth | null = null;
@@ -115,6 +117,7 @@ export class GlobeRenderer {
   readonly airports = new AirportLayer();
   readonly routes = new RouteLayer();
   readonly traffic = new TrafficLayer();
+  readonly weather = new WeatherLayer();
 
   onPick: ((hit: GlobeHit | null, event: PointerEvent) => void) | null = null;
   onHover: ((hit: GlobeHit | null) => void) | null = null;
@@ -174,7 +177,7 @@ export class GlobeRenderer {
     this.controls = new GlobeCamera(canvas, 1);
     if (labelRoot) this.labels = new LabelLayer(labelRoot);
 
-    this.scene.add(this.borders.group, this.routes.group, this.airports.points, this.traffic.group);
+    this.scene.add(this.borders.group, this.routes.group, this.airports.points, this.traffic.group, this.weather.group);
 
     this.controls.onClick = (x, y, e) => this.onPick?.(this.pick(x, y), e);
     this.controls.onHover = (x, y) => {
@@ -348,7 +351,6 @@ export class GlobeRenderer {
 
   setLayers(patch: Partial<GlobeLayers>): void {
     Object.assign(this.layers, patch);
-    this.earth?.setCloudsVisible(this.layers.clouds);
     this.traffic.showRivals = this.layers.rivalTraffic;
     this.styleDirty = true;
     if (!this.layers.labels) this.labels?.update([], this.width, this.height, 0);
@@ -602,6 +604,25 @@ export class GlobeRenderer {
         offset: radius,
       });
     }
+    // Weather worth knowing about carries its name.
+    for (const w of this.weather.shown) {
+      if (w.strength < 0.2) continue;
+      this.v.copy(w.pos);
+      if (occluded(this.v, camPos)) continue;
+      this.v.project(cam);
+      if (this.v.z > 1 || Math.abs(this.v.x) > 1.02 || Math.abs(this.v.y) > 1.02) continue;
+      specs.push({
+        id: `wx${w.id}`,
+        x: (this.v.x * 0.5 + 0.5) * this.width - 7,
+        y: (-this.v.y * 0.5 + 0.5) * this.height + 8,
+        priority: 650 + w.strength * 300,
+        code: '',
+        name: w.title,
+        kind: 'weather',
+        offset: 0,
+        floating: true,
+      });
+    }
     const max = Math.round(THREE.MathUtils.lerp(70, 26, THREE.MathUtils.smoothstep(altitude, 0.5, 3.2)));
     this.labels.update(specs, this.width, this.height, max);
   }
@@ -670,6 +691,8 @@ export class GlobeRenderer {
     // In the flight view the camera sits just above the clouds: treat it as fully zoomed in.
     const altitude = chasing ? 0.2 : this.controls.pose.altitude;
     this.earth.setSun(this.sun);
+    // The key light of the fast view rides with the camera, which would park its reflection mid-screen.
+    this.earth.setGlint(1 - 0.85 * this.studioBlend);
     this.earth.update(dt, this.controls.camera.position.length() - 1, chasing ? 1 : 0);
     this.sky.update(gmstDegrees(time), this.sun, this.controls.camera, this.pixelRatio);
     // Inside the atmosphere the daytime sky drowns out the stars.
@@ -690,6 +713,8 @@ export class GlobeRenderer {
     // The map overlays are drawn for the view from orbit; from the flight deck
     // of a chase plane they would be poles and billboards in the sky.
     this.traffic.group.visible = !!sim && !chasing;
+    // Weather belongs to the map; from a chase plane the scenery is the cloud deck below.
+    this.weather.update(sim, time, dt, this.sun, this.layers.weather && !chasing);
     this.routes.group.visible = !chasing;
     this.airports.points.visible = !chasing;
     this.borders.update(altitude, this.layers.borders, chasing ? 0.1 + 0.26 * daylight : 1);
@@ -736,6 +761,7 @@ export class GlobeRenderer {
     this.sky?.dispose();
     this.routes.dispose();
     this.traffic.dispose();
+    this.weather.dispose();
     this.chase?.dispose();
     this.labels?.clear();
     for (const t of this.textures) t.dispose();

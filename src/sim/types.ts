@@ -456,6 +456,31 @@ export interface Objective {
 
 export type Difficulty = 'relaxed' | 'standard' | 'ruthless';
 
+export type WeatherKind = 'storm' | 'snow' | 'thunder' | 'cyclone' | 'fog' | 'sand';
+
+/** A weather system: it forms somewhere, travels and dies, and disrupts the airports it passes over. */
+export interface WeatherSystem {
+  id: number;
+  kind: WeatherKind;
+  /** What the news calls it: "Atlantic storm", "Typhoon Mirae". */
+  title: string;
+  /** Where it formed. */
+  lat: number;
+  lon: number;
+  /** Degrees a day east and north when it formed, and the degrees a day its heading swings by. */
+  dLon: number;
+  dLat: number;
+  turn: number;
+  /** Radius of the area it affects, km. */
+  radius: number;
+  /** 0..1 at its peak. */
+  strength: number;
+  start: number;
+  end: number;
+  /** Airports of the player's that have been warned of it. */
+  warned: AirportId[];
+}
+
 export interface World {
   /** USD per kg of jet fuel. */
   fuelPrice: number;
@@ -466,6 +491,8 @@ export interface World {
   economyPhase: number;
   economyHistory: number[];
   events: WorldEvent[];
+  /** Weather systems in being (absent in saves from before there were any). */
+  weather?: WeatherSystem[];
 }
 
 export interface Game {

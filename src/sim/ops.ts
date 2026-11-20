@@ -4,10 +4,11 @@ import { AIRCRAFT_TYPE, totalSeats, usableRange } from './data/aircraft';
 import { AIRPORT, airportDistance } from './data/airports';
 import { BOOKING_SWING } from './demand';
 import { earn, feeFactor, fuelPriceFor, hubDiscount, labourFactor, ownershipPerDay, spend } from './finance';
-import { aircraftAgeYears, blockMinutes, getMarket, legsPerDay, maxBlockMinutes, NIGHT_STOP_BLOCK, offerOf, rotationFrequency } from './market';
+import { aircraftAgeYears, blockMinutes, dutyMinutes, getMarket, legsPerDay, maxBlockMinutes, NIGHT_STOP_BLOCK, offerOf, rotationFrequency } from './market';
 import { chance, rand, randRange } from './rng';
 import type { Aircraft, AircraftType, Airline, AirportId, Route, Triple } from './types';
 import type { Sim } from './sim';
+import { disruptionAt, weatherName, weatherOver, WEATHER_CLOSES } from './weather';
 
 export const NEVER = Number.MAX_SAFE_INTEGER;
 
@@ -240,7 +241,7 @@ function dispatch(sim: Sim, ac: Aircraft, t: number): void {
     const dest = r.a === ac.base ? r.b : r.b === ac.base ? r.a : null;
     if (dest) {
       // Daily flying hours: the out-and-back has to fit in the time the aircraft has in hand.
-      const cap = maxBlockMinutes(ac.type);
+      const cap = dutyMinutes(sim, ac);
       const perMinute = cap / 1440;
       const inHand = Math.min(cap, (ac.duty ?? cap) + (t - (ac.dutyTime ?? t)) * perMinute);
       const need = 2 * blockMinutes(ac.type, r.dist);
@@ -249,7 +250,7 @@ function dispatch(sim: Sim, ac: Aircraft, t: number): void {
       ac.dutyTime = t;
       if (inHand < enough - 0.5) {
         ac.rotIndex = before;
-        ac.note = 'Crew rest and daily checks';
+        ac.note = cap < maxBlockMinutes(ac.type) ? 'Between rotations' : 'Crew rest and daily checks';
         ac.next = t + Math.ceil((enough - inHand) / perMinute);
         return;
       }
@@ -310,10 +311,15 @@ function fly(sim: Sim, ac: Aircraft, route: Route, to: AirportId, t: number): bo
     return false;
   }
 
-  // Closed airports hold everything on the ground.
-  const closure = Math.max(sim.disruption[A.index], sim.disruption[B.index]);
-  if (closure >= 0.9) {
-    ac.note = `Held — ${sim.disruption[A.index] >= 0.9 ? A.city : B.city} closed`;
+  // Closed airports hold everything on the ground: a strike or an ash cloud, or weather
+  // too bad to fly in.
+  const troubleA = disruptionAt(sim, A, t);
+  const troubleB = disruptionAt(sim, B, t);
+  const closure = Math.max(troubleA, troubleB);
+  if (closure >= WEATHER_CLOSES) {
+    const shut = troubleA >= WEATHER_CLOSES ? A : B;
+    const weather = weatherOver(sim, shut, t);
+    ac.note = weather && weather.strength >= WEATHER_CLOSES ? `Held — ${weatherName(weather.system)} over ${shut.city}` : `Held — ${shut.city} closed`;
     ac.next = t + 180;
     al.today.cancelled += 1;
     al.month.cancelled += 1;
@@ -367,11 +373,11 @@ function fly(sim: Sim, ac: Aircraft, route: Route, to: AirportId, t: number): bo
   // Delays.
   let pDelay = 0.1 + (A.tier > 3 ? 0.05 * (A.tier - 3) : 0) + (B.tier > 3 ? 0.03 : 0)
     + (1 - ac.condition) * 0.25 + MAINT_POLICY_DELAY[policy]
-    + sim.disruption[A.index] * 0.6 + sim.disruption[B.index] * 0.3 + (al.morale < 40 ? 0.06 : 0);
+    + troubleA * 0.5 + troubleB * 0.25 + (al.morale < 40 ? 0.06 : 0);
   pDelay = Math.max(0.03, Math.min(0.9, pDelay));
   let delay = 0;
   if (chance(g, pDelay)) {
-    const mean = closure > 0.3 ? 110 : 34;
+    const mean = closure > 0.45 ? 110 : 34;
     delay = 16 + -Math.log(1 - rand(g) * 0.999) * mean;
   }
 

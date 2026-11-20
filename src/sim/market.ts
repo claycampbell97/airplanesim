@@ -270,6 +270,7 @@ export function rotationFrequency(sim: Sim, ac: Aircraft, rotation: number[] = a
   let cycle = 0;
   let night = 0;
   let block = 0;
+  let routes = 0;
   for (const rid of rotation) {
     const r = sim.routeById.get(rid);
     if (!r) continue;
@@ -277,12 +278,34 @@ export function rotationFrequency(sim: Sim, ac: Aircraft, rotation: number[] = a
     const b = blockMinutes(ac.type, r.dist);
     cycle += rt;
     block += 2 * b;
+    routes += 1;
     if (b < NIGHT_STOP_BLOCK) night += rt;
   }
   if (cycle <= 0) return 0;
   // Night stops only cost time on the short sectors of a rotation.
   const window = 1 - (1 - DAY_WINDOW) * (night / cycle);
-  return Math.min((1440 / cycle) * window, maxBlockMinutes(ac.type) / block) * AVAILABILITY;
+  return Math.min((1440 / cycle) * window, maxBlockMinutes(ac.type) / block) * AVAILABILITY * flyingShare(ac, routes);
+}
+
+/**
+ * The part of the day an aircraft flies. A rival's aircraft bought to share its day
+ * between several thin routes flies only its part of the day until it has them all:
+ * the routes were planned, and their slots counted, at that frequency.
+ */
+export function flyingShare(ac: Aircraft, routes: number = ac.rotation.length): number {
+  return ac.partTime && routes > 0 && routes < ac.partTime ? routes / ac.partTime : 1;
+}
+
+/** Minutes gate to gate an aircraft may fly in a day: its type's limit, or less for one flying part of the day. */
+export function dutyMinutes(sim: Sim, ac: Aircraft): number {
+  const cap = maxBlockMinutes(ac.type);
+  if (flyingShare(ac) >= 1) return cap;
+  let block = 0;
+  for (const rid of ac.rotation) {
+    const r = sim.routeById.get(rid);
+    if (r) block += 2 * blockMinutes(ac.type, r.dist);
+  }
+  return Math.min(cap, (rotationFrequency(sim, ac) / AVAILABILITY) * block);
 }
 
 /** Flights (in either direction) an aircraft makes per day across its whole rotation. */

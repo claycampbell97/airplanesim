@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { Newspaper } from 'lucide-react';
 import { AIRPORT, REGION_NAMES } from '../../sim/data/airports';
 import { formatClock, formatDate } from '../../sim/time';
+import { WEATHER_CLOSES, weatherEffect, weatherReport } from '../../sim/weather';
 import type { NewsKind } from '../../sim/types';
 import { percent } from '../app/format';
-import { inspectAirport, openPanel, refresh, setState, useSim } from '../app/store';
-import { cx, Panel, Seg } from '../components/ui';
+import { game, inspectAirport, openPanel, refresh, setState, useSim } from '../app/store';
+import { cx, Panel, Seg, WeatherIcon } from '../components/ui';
 
 type Filter = 'all' | 'airline' | 'rivals' | 'world';
 const FILTERS: Record<Filter, NewsKind[] | null> = {
@@ -29,6 +30,9 @@ export function NewsPanel() {
   const kinds = FILTERS[filter];
   const items = g.news.filter((n) => !kinds || kinds.includes(n.kind)).slice(-80).reverse();
   const events = g.world.events.filter((e) => e.end > g.time);
+  // Weather that is doing something to the airline, and the worst of the rest.
+  const reports = weatherReport(sim).filter((w) => w.intensity >= 0.15);
+  const weather = [...reports.filter((w) => w.affected.length > 0), ...reports.filter((w) => w.affected.length === 0).slice(0, 4)];
 
   return (
     <Panel title="News and events" icon={<Newspaper size={20} />} onClose={() => openPanel(null)}>
@@ -65,6 +69,37 @@ export function NewsPanel() {
                     <span className="muted small"> · {e.airport ? AIRPORT[e.airport].id : e.region ? REGION_NAMES[e.region] : 'worldwide'} · {effects.join(', ')}</span>
                   </div>
                   <span className="small dim nowrap">{days} day{days === 1 ? '' : 's'} left</span>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {weather.length > 0 && (
+        <>
+          <div className="section-title">Weather</div>
+          <div className="col gap-4">
+            {weather.map((w) => {
+              const closes = w.intensity >= WEATHER_CLOSES;
+              const hours = Math.max(1, Math.round((w.system.end - g.time) / 60));
+              return (
+                <div key={w.system.id} className="list-row click" onClick={() => game.globe?.controls.flyTo({ lat: w.lat, lon: w.lon, altitude: 0.9 })}>
+                  <span className={w.affected.length ? (closes ? 'bad' : 'warn') : 'dim'} style={{ flex: 'none', display: 'flex' }}><WeatherIcon kind={w.system.kind} size={16} /></span>
+                  <div className="grow">
+                    <span className="strong">{w.system.title}</span>
+                    <span className="muted small"> · {w.over ? 'over' : 'at sea near'} {w.near.city} · {closes ? 'closes airports under its core' : weatherEffect(w.intensity)}</span>
+                    {w.affected.length > 0 && (
+                      <div className="small">
+                        <span className="muted">Your airports: </span>
+                        {w.affected.slice(0, 6).map((a, i) => (
+                          <span key={a.airport.id}>{i > 0 && ', '}<span className="mono">{a.airport.id}</span> <span className={a.strength >= WEATHER_CLOSES ? 'bad' : 'muted'}>{a.strength >= WEATHER_CLOSES ? 'closed' : weatherEffect(a.strength)}</span></span>
+                        ))}
+                        {w.affected.length > 6 && <span className="muted"> and {w.affected.length - 6} more</span>}
+                      </div>
+                    )}
+                  </div>
+                  <span className="small dim nowrap">{hours >= 36 ? `${Math.round(hours / 24)} days` : `${hours} h`} left</span>
                 </div>
               );
             })}

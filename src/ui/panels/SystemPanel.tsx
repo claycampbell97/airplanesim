@@ -77,7 +77,7 @@ export function SystemPanel() {
           options={[{ value: 'real', label: 'Real day and night', title: 'The sun is where it really is for the game date and time' }, { value: 'studio', label: 'Always daylight', title: 'The side you are looking at is always lit' }]} />
       </div>
       <div className="grid-2">
-        <label className="check"><input type="checkbox" checked={settings.clouds} onChange={(e) => applySettings({ clouds: e.target.checked })} />Clouds</label>
+        <label className="check"><input type="checkbox" checked={settings.weather} onChange={(e) => applySettings({ weather: e.target.checked })} />Weather</label>
         <label className="check"><input type="checkbox" checked={settings.borders} onChange={(e) => applySettings({ borders: e.target.checked })} />Coastlines and borders</label>
         <label className="check"><input type="checkbox" checked={settings.labels} onChange={(e) => applySettings({ labels: e.target.checked })} />Airport labels</label>
         <label className="check"><input type="checkbox" checked={settings.rivalTraffic} onChange={(e) => applySettings({ rivalTraffic: e.target.checked })} />Other airlines' aircraft</label>

@@ -421,7 +421,10 @@ export function closeRoute(sim: Sim, routeId: number): Result {
   if (!r) return fail('Route not found');
   for (const id of [...r.aircraft]) {
     const ac = sim.acById.get(id);
-    if (ac) setRotation(sim, ac.id, ac.rotation.filter((x) => x !== routeId));
+    if (!ac) continue;
+    // An aircraft that shared its day with this route would fly the others more often: where
+    // there are no slots for that, it is left unassigned rather than flying over its slots.
+    if (!setRotation(sim, ac.id, ac.rotation.filter((x) => x !== routeId)).ok) setRotation(sim, ac.id, []);
   }
   detachRoute(sim, r);
   const g = sim.game;

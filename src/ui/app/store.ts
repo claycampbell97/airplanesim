@@ -58,7 +58,7 @@ export interface Settings {
   sun: SunMode;
   labels: boolean;
   borders: boolean;
-  clouds: boolean;
+  weather: boolean;
   rivalTraffic: boolean;
   rivalRoutes: boolean;
   colorMode: RouteColorMode;
@@ -69,7 +69,7 @@ export interface Settings {
 }
 
 const DEFAULT_SETTINGS: Settings = {
-  quality: 'high', sun: 'real', labels: true, borders: true, clouds: true, rivalTraffic: true, rivalRoutes: false,
+  quality: 'high', sun: 'real', labels: true, borders: true, weather: true, rivalTraffic: true, rivalRoutes: false,
   colorMode: 'brand', sound: true, volume: 0.5, autosave: true, pauseOnDecision: true,
 };
 
@@ -180,7 +180,7 @@ export function applySettings(patch: Partial<Settings>): void {
   if (!globe) return;
   globe.sunMode = settings.sun;
   globe.setLayers({
-    labels: settings.labels, borders: settings.borders, clouds: settings.clouds,
+    labels: settings.labels, borders: settings.borders, weather: settings.weather,
     rivalTraffic: settings.rivalTraffic, rivalRoutes: settings.rivalRoutes,
   });
   globe.setColorMode(settings.colorMode);
@@ -555,7 +555,7 @@ export function bindGlobe(globe: GlobeRenderer): void {
 if (import.meta.env.DEV || new URLSearchParams(location.search).has('debug')) {
   Object.assign(window as object, {
     __app: {
-      game, getState, setState, openPanel, setSpeed, setPaused, startPlan, showRoute, showAircraft, inspectAirport, inspectFlight, setChase,
+      game, getState, setState, openPanel, setSpeed, setPaused, startPlan, cancelPlan, showRoute, showAircraft, inspectAirport, inspectFlight, setChase,
       newGame, saveGame, loadGame, quitToTitle, audio,
       sim: { actions, planner }, airports: AIRPORT,
     },

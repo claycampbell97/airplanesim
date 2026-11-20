@@ -8,7 +8,7 @@
 
 import * as THREE from 'three';
 
-const NOISE_GLSL = /* glsl */ `
+export const NOISE_GLSL = /* glsl */ `
 float hash13(vec3 p) {
   p = fract(p * 0.1031);
   p += dot(p, p.zyx + 31.32);
@@ -56,6 +56,7 @@ uniform float cloudShift;
 uniform float detail;
 uniform float closeUp;
 uniform float cloudShadows;
+uniform float glintAmount;
 varying vec3 vPos;
 varying vec2 vUv;
 ${NOISE_GLSL}
@@ -110,7 +111,7 @@ void main() {
 
   // Shadows of the cloud deck, displaced away from the sun.
   vec2 toSun = vec2(dot(sunDir, east) / cosLat, dot(sunDir, north)) * 0.0022;
-  float cloudAbove = smoothstep(0.12, 0.8, texture2D(auxMap, vUv + vec2(cloudShift, 0.0)).b);
+  float cloudAbove = cloudShadows * smoothstep(0.12, 0.8, texture2D(auxMap, vUv + vec2(cloudShift, 0.0)).b);
   float cloudShadow = smoothstep(0.12, 0.8, texture2D(auxMap, vUv + vec2(cloudShift, 0.0) + toSun).b);
   float shadow = 1.0 - 0.5 * cloudShadow * cloudShadows;
 
@@ -124,7 +125,9 @@ void main() {
   if (detail > 0.001) Nw = normalize(N + (vec3(vnoise(N * 1500.0), vnoise(N * 1500.0 + 4.1), vnoise(N * 1500.0 + 8.3)) - 0.5) * 0.02 * detail);
   vec3 H = normalize(sunDir + V);
   float nh = max(dot(Nw, H), 0.0);
-  float glint = pow(nh, 70.0) * 0.8 + pow(nh, 420.0) * 2.4;
+  // From orbit the glint is kept small, so that it is not taken for weather on the
+  // clear map; in the flight view it is the sea shining through the gaps in the cloud.
+  float glint = (pow(nh, mix(140.0, 70.0, closeUp)) * mix(0.1, 0.8, closeUp) + pow(nh, mix(900.0, 420.0, closeUp)) * mix(0.55, 2.4, closeUp)) * mix(glintAmount, 1.0, closeUp);
   float fresnel = pow(1.0 - max(dot(N, V), 0.0), 4.0);
   float wet = (1.0 - land) * (1.0 - 0.75 * cloudAbove);
   color += sunColor * glint * wet * smoothstep(0.0, 0.15, ndl);
@@ -331,6 +334,7 @@ export class Earth {
         detail: { value: 0 },
         closeUp: { value: 0 },
         cloudShadows: { value: 1 },
+        glintAmount: { value: 1 },
       },
       vertexShader: SPHERE_VERT,
       fragmentShader: SURFACE_FRAG,
@@ -392,6 +396,11 @@ export class Earth {
     (this.surfaceMat.uniforms.sunDir.value as THREE.Vector3).copy(dir);
   }
 
+  /** How strongly the sun glints off the sea as seen from orbit, 0..1. */
+  setGlint(amount: number): void {
+    this.surfaceMat.uniforms.glintAmount.value = amount;
+  }
+
   /**
    * `altitude` is the camera's height above the surface in Earth radii. `closeUp`
    * (0..1) is 1 when the camera skims the cloud tops in the flight view.
@@ -412,6 +421,7 @@ export class Earth {
         m.needsUpdate = true;
       }
     }
+    this.setCloudDeck(this.closeUp);
     // A deeper sky around the aircraft than the thin limb seen from orbit.
     this.atmoMat.uniforms.intensity.value = 5.5 + 5.5 * this.closeUp;
     // Weather drifts slowly eastwards.
@@ -423,9 +433,15 @@ export class Earth {
     this.cloudMat.uniforms.detail.value = detail;
   }
 
-  setCloudsVisible(visible: boolean): void {
-    this.clouds.visible = visible;
-    this.surfaceMat.uniforms.cloudShadows.value = visible ? 1 : 0;
+  /**
+   * How much of the cloud deck to draw, 0..1. The map seen from orbit is kept clear
+   * (the weather that matters is drawn by the weather layer); the deck belongs to the
+   * flight view, where it is scenery.
+   */
+  setCloudDeck(amount: number): void {
+    this.clouds.visible = amount > 0.004;
+    this.cloudMat.uniforms.opacity.value = amount;
+    this.surfaceMat.uniforms.cloudShadows.value = amount;
   }
 
   setAtmosphereQuality(viewSteps: number, lightSteps: number): void {
