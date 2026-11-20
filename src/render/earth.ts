@@ -127,7 +127,7 @@ void main() {
   float nh = max(dot(Nw, H), 0.0);
   // From orbit the glint is kept small, so that it is not taken for weather on the
   // clear map; in the flight view it is the sea shining through the gaps in the cloud.
-  float glint = (pow(nh, mix(140.0, 70.0, closeUp)) * mix(0.1, 0.8, closeUp) + pow(nh, mix(900.0, 420.0, closeUp)) * mix(0.55, 2.4, closeUp)) * mix(glintAmount, 1.0, closeUp);
+  float glint = (pow(nh, mix(260.0, 70.0, closeUp)) * mix(0.03, 0.8, closeUp) + pow(nh, mix(1600.0, 420.0, closeUp)) * mix(0.16, 2.4, closeUp)) * mix(glintAmount, 1.0, closeUp);
   float fresnel = pow(1.0 - max(dot(N, V), 0.0), 4.0);
   float wet = (1.0 - land) * (1.0 - 0.75 * cloudAbove);
   color += sunColor * glint * wet * smoothstep(0.0, 0.15, ndl);

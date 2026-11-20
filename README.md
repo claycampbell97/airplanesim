@@ -7,13 +7,15 @@ living, photoreal Earth: 667 real airports, 28 real aircraft types, 39 rival
 airlines that plan against you, and an economy in which every seat on every flight
 is sold (or not) by a model of who wants to fly where, when, and at what price.
 
-![Your network on the globe, with every airline's traffic in the air](docs/screens/hero.jpg)
+![Your network on a clear globe, with every airline's traffic in the air and a storm coming in off the Atlantic](docs/screens/hero.jpg)
 
 | | |
 |---|---|
+| ![Weather over Europe, and what it is doing to Dublin](docs/screens/weather.jpg) | ![Planning a route on the globe](docs/screens/planner.jpg) |
+| ![A route: fares, aircraft and who carries the market](docs/screens/route.jpg) | ![Overview of the airline](docs/screens/overview.jpg) |
 | ![Flight view by day](docs/screens/flight.jpg) | ![Flight view at dusk](docs/screens/flight-dusk.jpg) |
-| ![Aircraft market with a live 3D model](docs/screens/market.jpg) | ![Planning a route on the globe](docs/screens/planner.jpg) |
-| ![A route: fares, aircraft and the competition](docs/screens/route.jpg) | ![Overview of the airline](docs/screens/overview.jpg) |
+
+![Aircraft market with a live 3D model](docs/screens/market.jpg)
 
 ## Play
 
@@ -32,11 +34,20 @@ loaded. Saves live in the browser (IndexedDB) and can be exported to a file.
 ## What is in it
 
 **A living 3D Earth.** Day and night follow the real sun for the game date; city
-lights come on across the terminator; clouds drift and cast shadows; the
-atmosphere is ray-marched (Rayleigh and Mie scattering), so the limb glows and
-sunsets redden. Zoom from deep space to regional scale and the view tilts
-towards the horizon. Every aircraft in the world is drawn in flight, with
-contrails, along great-circle paths.
+lights come on across the terminator; the atmosphere is ray-marched (Rayleigh and
+Mie scattering), so the limb glows and sunsets redden. The map itself is kept
+clear, so that what you see on it is what matters: your network, everyone's
+traffic, and the weather that is actually getting in the way. Zoom from deep
+space to regional scale and the view tilts towards the horizon. Every aircraft in
+the world is drawn in flight, with contrails, along great-circle paths.
+
+**Weather that comes and goes.** Atlantic lows, blizzards, thunderstorms, fog,
+sandstorms and named tropical cyclones form where and when they belong, track
+across the map, build and fade. An airport under one has delays; under the core
+of a severe one it closes, and flights are held on the ground until it has
+passed. The airport card shows what is overhead and what is forecast, and
+serious weather heading for your airports makes the news a day or two ahead.
+Any one place is clear about nine days in ten, even in its stormy season.
 
 **Flight view.** Click any aircraft, yours or a rival's, and ride alongside it:
 a full 3D model in its airline's livery, lit by the real sun, over the terrain it
@@ -49,11 +60,16 @@ world's most congested airports are slot-limited: you can only fly as many
 departures as you hold slots for, supply there is short and fares are firm, so
 the way to carry more is a bigger aircraft per slot.
 
-**A demand model, not a lookup table.** Passenger demand between any two cities
-comes from a gravity model (city size, wealth, distance, tourism, business ties,
-domestic and regional affinities) balanced so that each airport's traffic adds up
-to its real-world scale. Demand moves with the season, the economy and events,
-and bookings swing from one departure to the next. Three cabin classes respond
+**People fly where people really go.** Demand between two airports starts from
+how much travel there is between their two countries: some 2,800 country pairs
+fitted to approximate real volumes, which is where holidays, family ties, migrant
+workers, old empires and business come in. It is then shared among the airports
+by what kind of places they are: intercontinental gateways and regional
+airports, resorts and business centres, how far apart, and whether a train or a
+motorway does the job better. From Manchester that means Dublin, the
+Mediterranean and Amsterdam, not Jeddah. Each airport's traffic adds up to its
+real-world scale. Demand moves with the season, the economy and events, and
+bookings swing from one departure to the next. Three cabin classes respond
 differently to price and quality. Travellers you cannot seat go to other
 airlines; travellers connect through your hubs.
 
@@ -65,7 +81,12 @@ livery: seven livery styles, ten tail emblems, any colours.
 
 **39 rival airlines.** Legacy carriers, low-cost carriers, regional and premium
 airlines, each with a home market and a temperament. They open and close routes,
-reprice within days when the market moves, order aircraft and go bust.
+reprice within days when the market moves, order aircraft and go bust. On long
+routes you also compete with changing planes at somebody else's hub. Aircraft
+are judged by how well they suit the sector (nobody enjoys four hours in a
+turboprop), and their ranges allow for reserves and headwinds. The planner and
+every route panel show who carries the market, and how many passengers each
+airline gets.
 
 **The business.** Fares by class, set by hand or left to revenue management
 that moves each cabin's fare to where it earns the most; promotions, service and
@@ -80,7 +101,7 @@ what to expect once the route is established, in its first month, and if a
 rival moves in; each route remembers what it was planned for.
 
 **A world that pushes back.** Fuel price swings, recessions and booms, strikes,
-storms, volcanic ash, tourism fashions, big events; decisions to take (union
+volcanic ash, tourism fashions, big events; decisions to take (union
 demands, safety audits, manufacturer offers, investors) and 29 milestones to
 chase.
 
@@ -96,9 +117,11 @@ pad over the globe, engines and slipstream in the flight view.
    front; buying is cheaper over the years. A narrowbody suits busy routes of up
    to five or six hours; a turboprop or regional jet suits thin, short ones.
 3. **Open a route** from Routes (`N`) → *Plan on the globe*. The planner shows
-   the aircraft's range, how much demand each destination has, and a forecast of
-   load factor and profit: once established, in the first month, and if a rival
-   moves in.
+   the aircraft's range, how much demand each destination has, who already
+   carries it, and a forecast of load factor and profit: once established, in
+   the first month, and if a rival moves in. The biggest market is not always
+   the best bet: a crowded trunk route can pay less than a thinner one nobody
+   flies.
 4. **Start the clock** (`Space`) and watch the first flights go out.
 5. **Leave the fares alone, or don't.** New routes have managed fares: every few
    days each cabin's fare moves to where it earns the most. Your job is the
@@ -114,6 +137,9 @@ pad over the globe, engines and slipstream in the flight view.
    are what holds you back, fly bigger aircraft.
 8. **Mind the cash.** Winters are lean, fuel is volatile and rivals react. Hedge
    fuel when it is cheap, and keep a reserve.
+9. **Watch the weather.** A storm over one of your airports means delays; a
+   typhoon or a blizzard can shut it for a day or two. Click an airport to see
+   what is overhead and what is forecast.
 
 | Key | Action |
 |---|---|
@@ -133,19 +159,21 @@ demand, costs, interest rates and how aggressive the rivals are.
 ```
 src/
   sim/        The simulation. No DOM, no rendering: runs in Node for the tests.
-    data/       Airports (generated), aircraft types, rival airline templates
-    demand.ts   Gravity demand model, class split, reference fares, seasons
+    data/       Airports and country ties (generated), aircraft types, rival airline templates
+    demand.ts   Who wants to fly where: country ties, airport structure, class split, fares, seasons
     pricing.ts  Revenue management: fares that move to where each cabin earns most
     slots.ts    Departure slots at congested airports
-    market.ts   Market share between airlines, booking pools, connections
+    market.ts   Market share between airlines and one-stop itineraries, booking pools, connections
     ops.ts      The flight state machine: turnarounds, legs, delays, costs
     finance.ts  Ledgers, loans, leases, credit, valuation
     ai.ts       Rival airlines
+    weather.ts  Weather systems: where they form, how they move, what they do to airports
     world.ts    Fuel, the economy, events, the second-hand market
     planner.ts  Route forecasts and suggestions (shared by the UI and the AI)
     sim.ts      The clock, daily and monthly cycles, save and load
   render/     three.js
     earth.ts    Surface, cloud and atmosphere shaders
+    weather.ts  Weather systems drawn on the globe
     sky.ts      Stars, Milky Way, sun
     layers.ts   Borders, airports, route arcs, live traffic
     chase.ts    The flight view
@@ -177,8 +205,15 @@ resolution when a GPU cannot keep up.
 npm test                 # simulation, demand and balance tests
 npm run typecheck
 REPORT=1 npm run balance # how a simple bot player fares, and what each home base offers
-DIAG=1 npx vitest run tests/diag.test.ts --disable-console-intercept   # modelled vs realised loads
+CALIBRATE=1 npx vitest run tests/demand.test.ts --disable-console-intercept   # the demand model against real routes
 ```
+
+The demand test compares the model with about 1,700 real routes
+(`tests/routes.reference.ts`): the median error is a factor of about 1.5, 70% are
+within a factor of two and 86% within three. The model is weakest on
+resort-by-resort national tastes (which nationality goes to which island) and in
+countries with few airports in the game, where the trunk routes come out too
+big.
 
 Useful addresses in development:
 
@@ -190,14 +225,20 @@ Useful addresses in development:
 
 ```bash
 npm run data:airports    # airports from OurAirports + scripts/*-curated.txt
+npm run data:ties        # country-to-country travel, fitted to scripts/corridors-curated.txt
 npm run data:borders     # coastlines and borders from Natural Earth
 scripts/process-textures.sh <src-dir> [<8k-dir>]   # Earth textures (needs ImageMagick)
 ```
 
 The generated files are committed, so none of this is needed to run the game.
 `scripts/airports-curated.txt` decides which airports exist and carries the
-balance inputs (annual passengers, transfer share, character flags);
-`scripts/countries-curated.txt` holds region, wealth and trade bloc.
+balance inputs (annual passengers, transfer share, domestic share, and flags
+for gateways, resorts and business centres); `scripts/countries-curated.txt`
+holds region, wealth, trade bloc, languages, railways and domestic share;
+`scripts/corridors-curated.txt` holds passengers a year between pairs of
+countries. All of these figures are approximate game-balance inputs, written
+down from memory of public statistics of about 2019. They are not statistics,
+and should not be used as such.
 
 ## Credits and licences
 
